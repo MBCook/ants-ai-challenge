@@ -83,3 +83,9 @@
     (filter #(not (nil? %))
             [(defines/offset-directions [row 0])
              (defines/offset-directions [0 col])])))
+
+(defn debug-log
+  "Log something to the console for us to go through later"
+  [& message]
+  (binding [*out* *err*]
+    (apply println message)))

@@ -8,7 +8,10 @@
 
 (defn simple-bot []
   (doseq [ant (gamestate/my-ants)]
-    (let [dir (first (filter #(utilities/valid-move? ant %) defines/directions))]
+    (let [valid-directions (filter #(utilities/valid-move? ant %) defines/directions)
+         dir (if (empty? valid-directions)
+                  nil
+                  (rand-nth valid-directions))]
       (when dir
         (interface/issue-move ant dir)))))
 
