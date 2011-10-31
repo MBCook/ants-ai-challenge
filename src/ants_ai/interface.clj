@@ -25,7 +25,7 @@
   ([]
     (build-game-info *in*))
   ([input-stream]
-    (let [*in* input-stream]
+    (binding [*in* input-stream]
       (loop [cur (read-line)
              info {}]
         (if (message? :ready cur)

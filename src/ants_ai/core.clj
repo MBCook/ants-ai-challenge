@@ -9,17 +9,17 @@
   ([bot]
     (start-game *in* bot))
   ([input-stream bot]
-  (let [*in* input-stream]
-    (when (interface/message? :turn (read-line))
-      (binding [defines/*game-info* (interface/build-game-info)]
-        (println "go") ; we're "setup" so let's start
-        (loop [cur (read-line)
-               state {}]
-          (if (interface/message? :end cur)
-            ; This is where collect-stats was
-            (do
-              (when (interface/message? :go cur)
-                (binding [defines/*game-state* state]
-                  (bot)
-                  (println "go")))
-              (recur (read-line) (gamestate/update-state state cur))))))))))
+    (binding [*in* input-stream]
+      (when (interface/message? :turn (read-line))
+        (binding [defines/*game-info* (interface/build-game-info)]
+          (println "go") ; we're "setup" so let's start
+          (loop [cur (read-line)
+                 state {}]
+            (if (interface/message? :end cur)
+              nil   ; This is where collect-stats was
+              (do
+                (when (interface/message? :go cur)
+                  (binding [defines/*game-state* state]
+                    (bot)
+                    (println "go")))
+                (recur (read-line) (gamestate/update-state state cur))))))))))
