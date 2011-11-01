@@ -6,13 +6,34 @@
               [ants-ai.gamestate :as gamestate]
               [ants-ai.core :as core]))
 
+(defn pick-random-direction
+  "Pick a random valid direction"
+  [ant]
+  (let [valid-directions (filter #(utilities/valid-move? ant %) defines/directions)]
+    (if (empty? valid-directions)
+        nil
+        (rand-nth valid-directions))))
+
+(defn move-towards-food
+  "Move towards the closest piece of food"
+  [ant]
+  (let [food-distances (map #(vector % (utilities/distance ant %)) (gamestate/food))
+        food (sort-by #(second %) food-distances)
+        best-spot (first (first food))
+        dirs (utilities/direction ant best-spot)]
+    (first dirs)
+    ))
+
 (defn process-ant
   "Take the given ant and figure out a move for them, returned as [ant dir result]"
   [ant]
   (let [valid-directions (filter #(utilities/valid-move? ant %) defines/directions)
-        dir (if (empty? valid-directions)
-                  nil
-                  (rand-nth valid-directions))
+        towards-food (move-towards-food ant)
+        dir (if (nil? towards-food)
+                (pick-random-direction ant)                       ; No food? Go crazy
+                (if (some #(= % towards-food) valid-directions)
+                    towards-food                                  ; Valid move towards food? Go for it
+                    (pick-random-direction ant)))                 ; Can't move towards food? Go crazy
         result (if (nil? dir)
                     nil
                     (utilities/move-ant ant dir))]
