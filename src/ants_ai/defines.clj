@@ -5,6 +5,7 @@
 
 (declare ^{:dynamic true} *game-info*)
 (declare ^{:dynamic true} *game-state*)
+(declare ^{:dynamic true} *log-file*)
 
 (def directions [:north :east :west :south])
 
