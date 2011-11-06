@@ -100,7 +100,7 @@
             occupied-locations (into (rest ants) (map #(last %) moves))   ; Locations to consider to be occupied
             ants-move (process-ant ant occupied-locations)                ; Figure out a move
             result (last ants-move)]
-        (utilities/debug-log ant " moving " (second ants-move) " to " result ", occupied " occupied-locations)
+        (utilities/debug-log ant " moving " (second ants-move) " to " result)
         (recur (rest ants)                    ; Ants left to process
                 (conj moves ants-move))))))   ; Moves updated with our new move
 
