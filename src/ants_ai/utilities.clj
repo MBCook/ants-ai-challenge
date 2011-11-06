@@ -18,11 +18,16 @@
              (* ady2 (/ (- dy) ady)))]
     [fx fy]))
 
+(defn distance-no-sqrt
+  "Get the euclidean distance between two locations on a torus, squared"
+  [location location-two]
+  (let [[dx dy] (unit-distance location location-two)]
+    (+ (Math/pow dx 2) (Math/pow dy 2))))
+
 (defn distance
   "Get the euclidean distance between two locations on a torus"
   [location location-two]
-  (let [[dx dy] (unit-distance location location-two)]
-    (Math/sqrt (+ (Math/pow dx 2) (Math/pow dy 2)))))
+  (Math/sqrt (distance-no-sqrt location location-two)))
 
 (defn contains-ant?
   "See if the given location is in the given ants array"

@@ -1,46 +1,74 @@
 (ns ants-ai.MyBot
     "The core of our bot"
-    (:require [ants-ai.interface :as interface]
+    (:require [clojure.set :as set]
+              [ants-ai.interface :as interface]
               [ants-ai.defines :as defines]
               [ants-ai.utilities :as utilities]
               [ants-ai.gamestate :as gamestate]
               [ants-ai.core :as core]))
 
-(defn pick-random-direction
+; Move functions take an ant and a collection of valid directions
+; They return a collection of directions that it would like to move this turn (possibly nil/empty)
+
+(defn move-in-random-direction
   "Pick a random valid direction"
-  [ant]
-  (let [valid-directions (filter #(utilities/valid-move? ant %) defines/directions)]
-    (if (empty? valid-directions)
-        nil
-        (rand-nth valid-directions))))
+  [ant valid-directions]
+  valid-directions)
 
 (defn move-towards-food
   "Move towards the closest piece of food"
-  [ant]
-  (let [food-distances (map #(vector % (utilities/distance ant %)) (gamestate/food))
-        food (sort-by #(second %) food-distances)
-        best-spot (first (first food))
-        dirs (utilities/direction ant best-spot)]
-    (first dirs)))
+  [ant _]
+  (when (not-empty (gamestate/food))
+    (let [food-distances (map #(vector % (utilities/distance-no-sqrt ant %)) (gamestate/food))
+          food (sort-by #(second %) food-distances)
+          best-spot (first (first food))
+          dirs (utilities/direction ant best-spot)]
+      dirs)))
+
+(defn move-to-capture-hill
+  "Move towards an enemy hill the ant can see"
+  [ant _]
+  (when (not-empty (gamestate/enemy-hills))
+    (let [hill-distances (map #(vector % (utilities/distance-no-sqrt ant %)) (gamestate/enemy-hills))
+          hills (sort-by #(second %) hill-distances)
+          best-spot (first (first hills))
+          dirs (utilities/direction ant best-spot)]
+      dirs)))
+
+(defn find-move-through-functions
+  "Run each function in turn for the ant, return the first non-nil direction we find that's valid"
+  [ant valid-directions]
+  (when (not-empty valid-directions))
+    (loop [functions-to-run {move-to-capture-hill :capture        ; First capture any hills we can see
+                            move-towards-food :food               ; Then go for the closest food
+                            move-in-random-direction :random}]    ; Nothing better? Go in a random direction
+      (if (not-empty functions-to-run)
+        (let [the-function-stuff (first functions-to-run)
+              the-function (key the-function-stuff)
+              the-function-purpose (val the-function-stuff)
+              result (apply the-function ant valid-directions [])]  ; The vec is so the directions aren't considered args
+          (if (empty? result)
+            (recur (rest functions-to-run))                         ; No decision, try the next function
+            (let [moves-to-choose-from (set/intersection (set result) (set valid-directions))
+                  dir (when (not-empty moves-to-choose-from)
+                        (rand-nth (vec moves-to-choose-from)))]
+              (if dir                                               ; Was one of the moves valid?
+                (do
+                  (utilities/debug-log "Ant at " ant " doing " the-function-purpose ", going " dir)
+                  dir)
+                (recur (rest functions-to-run)))))))))
 
 (defn process-ant
   "Take the given ant and figure out a move for them, returned as [ant dir result]"
   [ant occupied-locations]
   (let [valid-directions (filter #(utilities/valid-move? ant %) defines/directions)
-        towards-food (move-towards-food ant)                      ; Directions that will move us to the closest food
-        dir (cond
-              (nil? towards-food)                                 ; Can't go towards food? Go crazy
-                (pick-random-direction ant)
-              (some #(= % towards-food) valid-directions)         ; Go towards food
-                towards-food
-              :else                                               ; No idea what to do, go crazy
-                (pick-random-direction ant))
+        dir (find-move-through-functions ant valid-directions)
         result (when dir
                 (utilities/move-ant ant dir))]
     (cond
       (nil? dir)                                                  ; No valid moves? Stand still
         [ant nil ant]
-      (utilities/contains-ant? occupied-locations result)
+      (utilities/contains-ant? occupied-locations result)         ; Make sure we won't run into one of our other ants
         (do
           (utilities/debug-log "Ant at " ant " avoiding collision at " result)
           [ant nil ant])
