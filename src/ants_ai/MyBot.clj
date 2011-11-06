@@ -17,13 +17,14 @@
   defines/directions)
 
 (defn move-towards-food
-  "Move towards the closest piece of food"
+  "Move towards the closest piece of food the ant can see"
   [ant]
   (when (not-empty (gamestate/food))
     (let [food-distances (map #(vector % (utilities/distance-no-sqrt ant %)) (gamestate/food))
-          food (sort-by #(second %) food-distances)
+          food (sort-by #(second %) (filter #(<= (second %) (gameinfo/view-radius-squared)) food-distances))
           best-spot (first (first food))]
-      (utilities/direction ant best-spot))))
+      (when best-spot
+        (utilities/direction ant best-spot)))))
 
 (defn move-away-from-enemy
   "Move away from the closest enemy"

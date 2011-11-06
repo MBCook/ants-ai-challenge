@@ -4,11 +4,25 @@
               [ants-ai.defines :as defines]
               [ants-ai.gamestate :as gamestate]))
 
+(defn safe-abs
+  "Correctly handles calling abs on BigInts by coercing back to an int"
+  [val]
+  (Math/abs (int val)))
+
+(defn debug-log
+  "Log something to the console for us to go through later"
+  [& message]
+  (binding [*out* (if (nil? defines/*log-file*)
+                      *err*
+                      defines/*log-file*)]
+    (apply println message)
+    (flush)))
+
 (defn unit-distance
   "Get the vector distance between two points on a torus. Negative deltas are preserved."
   [location-one location-two]
   (let [[dx dy] (map - location-two location-one)
-        [adx ady] (map #(Math/abs %) [dx dy])
+        [adx ady] (map #(safe-abs %) [dx dy])
         [adx2 ady2] (map #(- (gamestate/game-info %) %2) [:rows :cols] [adx ady])
         fx (if (<= adx adx2)
              dx
@@ -80,19 +94,11 @@
   [location location-two]
   (let [[dr dc] (unit-distance location location-two)
         row (if-not (zero? dr)
-                    (/ dr (Math/abs dr))
+                    (/ dr (safe-abs dr))
                     dr)
         col (if-not (zero? dc)
-                    (/ dc (Math/abs dc))
+                    (/ dc (safe-abs dc))
                     dc)]
     (set (filter #(not (nil? %))
             [(defines/offset-directions [row 0])
              (defines/offset-directions [0 col])]))))
-
-(defn debug-log
-  "Log something to the console for us to go through later"
-  [& message]
-  (binding [*out* (if (nil? defines/*log-file*)
-                      *err*
-                      defines/*log-file*)]
-    (apply println message)))
