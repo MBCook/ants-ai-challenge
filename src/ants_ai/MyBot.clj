@@ -33,7 +33,7 @@
           ants (sort-by #(second %) (filter #(<= (second %) (max 9 (gameinfo/attack-radius-squared))) ant-distances))]
       (when (not-empty ants)
         (let [worst-ant (first (first ants))]
-          (set/difference (set defines/directions) (set (utilities/direction ant worst-ant))))))))
+          (set/difference defines/directions (utilities/direction ant worst-ant)))))))
 
 (defn move-to-capture-hill
   "Move towards an enemy hill the ant can see"
@@ -60,7 +60,7 @@
               result (apply the-function ant [])]
           (if (empty? result)
             (recur (rest functions-to-run))                         ; No decision, try the next function
-            (let [moves-to-choose-from (set/intersection (set result) (set valid-directions))
+            (let [moves-to-choose-from (set/intersection result valid-directions)
                   dir (when (not-empty moves-to-choose-from)
                         (rand-nth (vec moves-to-choose-from)))]
               (if dir                                               ; Was one of the moves valid?
@@ -72,7 +72,7 @@
 (defn process-ant
   "Take the given ant and figure out a move for them, returned as [ant dir result]"
   [ant occupied-locations]
-  (let [valid-directions (filter #(utilities/valid-move? ant %) defines/directions)
+  (let [valid-directions (set (filter #(utilities/valid-move? ant %) defines/directions))
         dir (find-move-through-functions ant valid-directions)
         result (when dir
                 (utilities/move-ant ant dir))]

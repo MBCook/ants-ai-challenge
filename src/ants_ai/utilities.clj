@@ -85,9 +85,9 @@
         col (if-not (zero? dc)
                     (/ dc (Math/abs dc))
                     dc)]
-    (filter #(not (nil? %))
+    (set (filter #(not (nil? %))
             [(defines/offset-directions [row 0])
-             (defines/offset-directions [0 col])])))
+             (defines/offset-directions [0 col])]))))
 
 (defn debug-log
   "Log something to the console for us to go through later"

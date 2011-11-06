@@ -7,7 +7,8 @@
 (declare ^{:dynamic true} *game-state*)
 (declare ^{:dynamic true} *log-file*)
 
-(def directions [:north :east :west :south])
+(def directions #{:north :east :west :south})
+(def opposite-directions {:north :south, :east :west, :west :east, :south :north})
 
 (def direction-symols {:north "N"
                         :south "S"
