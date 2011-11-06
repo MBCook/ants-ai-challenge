@@ -72,8 +72,11 @@
 (defn process-ant
   "Take the given ant and figure out a move for them, returned as [ant dir result]"
   [ant occupied-locations]
-  (let [valid-directions (set (filter #(utilities/valid-move? ant %) defines/directions))
-        dir (find-move-through-functions ant valid-directions)
+  (let [valid-moves (filter #(utilities/valid-move? ant %) defines/directions)  ; Ways ant could move
+        ants-last-move (@defines/*ant-last-moves* ant)                          ; The way the ant last moved
+        ants-way-back (defines/opposite-directions ants-last-move)
+        valid-directions (set (filter #(not= % (defines/opposite-directions ants-last-move)) valid-moves))
+        dir (find-move-through-functions ant valid-directions)                  ; The above is so our ant won't move backwards
         result (when dir
                 (utilities/move-ant ant dir))]
     (cond
@@ -91,7 +94,6 @@
   []
   (utilities/debug-log "")
   (utilities/debug-log "New turn")
-  (utilities/debug-log "Enemy ants: " (gamestate/enemy-ants))
   (loop [ants (gamestate/my-ants)         ; Ants we're processing
          moves []]                        ; Moves we'll be making
     (if (empty? ants)                     ; Out of ants? We're done
@@ -108,7 +110,9 @@
   "Core loop for the bot"
   (doseq [[ant dir res] (process-ants-for-moves)]
     (when dir
-      (interface/issue-move ant dir))))
+      (interface/issue-move ant dir)                      ; Issue the move to the server
+      (swap! defines/*ant-last-moves* assoc ant nil)      ; Forget the last move at the ant's old position
+      (swap! defines/*ant-last-moves* assoc res dir))))   ; Remember which way the ant went to their new position
 
 (binding [defines/*log-file* (java.io.FileWriter.
                                 "/Users/michael/Programming/Ants AI Challenge/tools/game_logs/my-log.txt"

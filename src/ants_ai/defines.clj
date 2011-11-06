@@ -7,6 +7,8 @@
 (declare ^{:dynamic true} *game-state*)
 (declare ^{:dynamic true} *log-file*)
 
+(def ^{:dynamic true} *ant-last-moves* (atom {}))
+
 (def directions #{:north :east :west :south})
 (def opposite-directions {:north :south, :east :west, :west :east, :south :north})
 
