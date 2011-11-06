@@ -7,32 +7,10 @@
                  :water #{}
                  :dead #{}
                  :ants #{}
-                 :enemie-ants #{}
+                 :enemy-ants #{}
                  :hills #{}
                  :enemy-hills #{}
                  :food #{}})
-
-;(defn- update-hills
-;  "Return an updated version of the hills array, based on removing hills
-;  that would have been razed by an ant on top."
-;  [status razing-ant]
-;  (setops/select #(let [[r c p] %]
-;                        (not= [r c] razing-ant)) (:hills status)))
-
-;(defn- update-enemy-hills
-;  "Return an updated version of the enemy hills array, based us having razed a hill."
-;  [status razing-ant]
-;  (setops/select #(let [[r c p] %]
-;                        (not                                                         ; ReFmove only things where...
-;                          (and (= [r c] (take 2 razing-ant))                            ; The ant is on a hill
-;                               (not= p (nth razing-ant 2))))) (:enemy-hills status)))   ; That doesn't belong to it
-
-;(defn will-be-occupied?
-;  "Given a bunch of [loc dir] pairs (where dir may not exist), see if the loc will be filled"
-;  [cur-ants loc]
-;  (when (or (contains-ant? cur-ants loc))
-;            (contains-ant? (water) loc)
-;        loc))
 
 (defn update-tile
   "Given the current state and some new information, update the neccessary tile"
@@ -77,7 +55,7 @@
 (defn enemy-ants
   "Get a set of all enemy ants where an enemy ant is [row col player-num]"
   []
-  (:enemie-ants defines/*game-state*))
+  (:enemy-ants defines/*game-state*))
 
 (defn my-hills
   "Get a set of all ants belonging to us"

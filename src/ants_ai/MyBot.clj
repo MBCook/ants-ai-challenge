@@ -5,48 +5,59 @@
               [ants-ai.defines :as defines]
               [ants-ai.utilities :as utilities]
               [ants-ai.gamestate :as gamestate]
+              [ants-ai.gameinfo :as gameinfo]
               [ants-ai.core :as core]))
 
-; Move functions take an ant and a collection of valid directions
+; Move functions take only an ant.
 ; They return a collection of directions that it would like to move this turn (possibly nil/empty)
 
 (defn move-in-random-direction
   "Pick a random valid direction"
-  [ant valid-directions]
-  valid-directions)
+  [ant]
+  defines/directions)
 
 (defn move-towards-food
   "Move towards the closest piece of food"
-  [ant _]
+  [ant]
   (when (not-empty (gamestate/food))
     (let [food-distances (map #(vector % (utilities/distance-no-sqrt ant %)) (gamestate/food))
           food (sort-by #(second %) food-distances)
-          best-spot (first (first food))
-          dirs (utilities/direction ant best-spot)]
-      dirs)))
+          best-spot (first (first food))]
+      (utilities/direction ant best-spot))))
+
+(defn move-away-from-enemy
+  "Move away from the closest enemy"
+  [ant]
+  (when (not-empty (gamestate/enemy-ants))
+    (let [ant-distances (map #(vector % (utilities/distance-no-sqrt ant %)) (gamestate/enemy-ants))
+          ants (sort-by #(second %) (filter #(<= (second %) (max 9 (gameinfo/attack-radius-squared))) ant-distances))]
+      (when (not-empty ants)
+        (let [worst-ant (first (first ants))]
+          (set/difference (set defines/directions) (set (utilities/direction ant worst-ant))))))))
 
 (defn move-to-capture-hill
   "Move towards an enemy hill the ant can see"
-  [ant _]
+  [ant]
   (when (not-empty (gamestate/enemy-hills))
     (let [hill-distances (map #(vector % (utilities/distance-no-sqrt ant %)) (gamestate/enemy-hills))
-          hills (sort-by #(second %) hill-distances)
-          best-spot (first (first hills))
-          dirs (utilities/direction ant best-spot)]
-      dirs)))
+          hills (sort-by #(second %) (filter #(<= (second %) (gameinfo/view-radius-squared)) hill-distances))]
+      (when (not-empty hills)
+        (let [best-spot (first (first hills))]
+          (utilities/direction ant best-spot))))))
 
 (defn find-move-through-functions
   "Run each function in turn for the ant, return the first non-nil direction we find that's valid"
   [ant valid-directions]
   (when (not-empty valid-directions))
     (loop [functions-to-run {move-to-capture-hill :capture        ; First capture any hills we can see
+                            move-away-from-enemy :run-away        ; Get away from nearby enemy ants
                             move-towards-food :food               ; Then go for the closest food
                             move-in-random-direction :random}]    ; Nothing better? Go in a random direction
       (if (not-empty functions-to-run)
         (let [the-function-stuff (first functions-to-run)
               the-function (key the-function-stuff)
               the-function-purpose (val the-function-stuff)
-              result (apply the-function ant valid-directions [])]  ; The vec is so the directions aren't considered args
+              result (apply the-function ant [])]
           (if (empty? result)
             (recur (rest functions-to-run))                         ; No decision, try the next function
             (let [moves-to-choose-from (set/intersection (set result) (set valid-directions))
@@ -80,6 +91,7 @@
   []
   (utilities/debug-log "")
   (utilities/debug-log "New turn")
+  (utilities/debug-log "Enemy ants: " (gamestate/enemy-ants))
   (loop [ants (gamestate/my-ants)         ; Ants we're processing
          moves []]                        ; Moves we'll be making
     (if (empty? ants)                     ; Out of ants? We're done

@@ -2,7 +2,9 @@
     "The core of the program"
     (:require [ants-ai.interface :as interface]
               [ants-ai.defines :as defines]
-              [ants-ai.gamestate :as gamestate]))
+              [ants-ai.gamestate :as gamestate]
+              [ants-ai.gameinfo :as gameinfo]
+              [ants-ai.utilities :as utilities]))
 
 (defn start-game
   "Play the game with the given bot."
@@ -13,6 +15,7 @@
       (when (interface/message? :turn (read-line))
         (binding [defines/*game-info* (interface/build-game-info)]
           (println "go") ; we're "setup" so let's start
+          (utilities/debug-log "Game info: " defines/*game-info*)
           (loop [cur (read-line)
                  state {}]
             (if (interface/message? :end cur)
