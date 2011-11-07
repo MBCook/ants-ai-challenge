@@ -12,11 +12,12 @@
 (defn debug-log
   "Log something to the console for us to go through later"
   [& message]
-  (binding [*out* (if (nil? defines/*log-file*)
-                      *err*
-                      defines/*log-file*)]
-    (apply println message)
-    (flush)))
+  (when defines/logging-enabled
+    (binding [*out* (if (nil? defines/*log-file*)
+                        *err*
+                        defines/*log-file*)]
+      (apply println message)
+      (flush))))
 
 (defn unit-distance
   "Get the vector distance between two points on a torus. Negative deltas are preserved."

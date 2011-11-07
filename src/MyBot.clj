@@ -115,8 +115,10 @@
       (swap! defines/*ant-last-moves* assoc ant nil)      ; Forget the last move at the ant's old position
       (swap! defines/*ant-last-moves* assoc res dir))))   ; Remember which way the ant went to their new position
 
-(binding [defines/*log-file* (java.io.FileWriter.
-                                "/Users/michael/Programming/Ants AI Challenge/tools/game_logs/my-log.txt"
-                                false)]
-  (core/start-game simple-bot)
-  (.close defines/*log-file*))
+(if defines/logging-enabled
+  (binding [defines/*log-file* (java.io.FileWriter.
+                                  "/Users/michael/Programming/Ants AI Challenge/tools/game_logs/my-log.txt"
+                                  false)]
+    (core/start-game simple-bot)
+    (.close defines/*log-file*))
+  (core/start-game simple-bot))
