@@ -1,4 +1,4 @@
-(ns ants-ai.MyBot
+(ns MyBot
     "The core of our bot"
     (:require [clojure.set :as set]
               [ants-ai.interface :as interface]
