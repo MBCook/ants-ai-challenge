@@ -63,7 +63,7 @@
   "Deteremine if the given location can be moved to. If so, loc is returned."
   [loc]
   (when (and (not (contains? (defines/*game-state* :water) loc))
-             (unoccupied? loc))
+             (not (contains? gamestate/my-hills loc)))              ; We shouldn't move onto our own hills
     loc))
 
 (defn move-ant

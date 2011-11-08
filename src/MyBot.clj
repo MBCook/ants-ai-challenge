@@ -29,12 +29,18 @@
 (defn move-away-from-enemy
   "Move away from the closest enemy"
   [ant]
-  (when (not-empty (gamestate/enemy-ants))
-    (let [ant-distances (map #(vector % (utilities/distance-no-sqrt ant %)) (gamestate/enemy-ants))
-          ants (sort-by #(second %) (filter #(<= (second %) (max 9 (gameinfo/attack-radius-squared))) ant-distances))]
-      (when (not-empty ants)
-        (let [worst-ant (first (first ants))]
-          (set/difference defines/directions (utilities/direction ant worst-ant)))))))
+  ; This rule doesn't apply if we are in visible range of one of our hills, or there are no enemies we know of
+  (when (or (empty (gamestate/enemy-ants))
+            (and (not-empty (gamestate/my-hills))
+                 (some #(<= (second %) (gameinfo/view-radius-squared))
+                    (map #(utilities/distance-no-sqrt ant %) (gamestate/my-hills)))))
+    nil)
+  ; The rule also doesn't apply if there are no enemy ants
+  (let [ant-distances (map #(vector % (utilities/distance-no-sqrt ant %)) (gamestate/enemy-ants))
+        ants (sort-by #(second %) (filter #(<= (second %) (max 9 (gameinfo/attack-radius-squared))) ant-distances))]
+    (when (not-empty ants)
+      (let [worst-ant (first (first ants))]
+        (set/difference defines/directions (utilities/direction ant worst-ant))))))
 
 (defn move-to-capture-hill
   "Move towards an enemy hill the ant can see"
