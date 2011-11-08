@@ -76,7 +76,9 @@
   (let [valid-moves (filter #(utilities/valid-move? ant %) defines/directions)  ; Ways ant could move
         ants-last-move (@defines/*ant-last-moves* ant)                          ; The way the ant last moved
         ants-way-back (defines/opposite-directions ants-last-move)
-        valid-directions (set (filter #(not= % (defines/opposite-directions ants-last-move)) valid-moves))
+        valid-directions (if (= (list ants-way-back) valid-moves)               ; Be sure that if we only have one valid
+                            (set valid-moves)                                   ; move that it's always available
+                            (set (filter #(not= % ants-way-back) valid-moves)))
         dir (find-move-through-functions ant valid-directions)                  ; The above is so our ant won't move backwards
         result (when dir
                 (utilities/move-ant ant dir))]
