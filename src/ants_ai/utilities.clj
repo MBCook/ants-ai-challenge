@@ -2,7 +2,8 @@
     "Useful functions to help us deal with the world"
     (:require [clojure.string :as string]
               [ants-ai.defines :as defines]
-              [ants-ai.gamestate :as gamestate]))
+              [ants-ai.gamestate :as gamestate]
+              [ants-ai.gameinfo :as gameinfo]))
 
 (defn safe-abs
   "Correctly handles calling abs on BigInts by coercing back to an int"
@@ -70,8 +71,8 @@
   "Move the ant in the given direction and return the new location"
   [ant dir]
   (let [dir-vector (defines/direction-offsets dir)
-        rows (defines/*game-info* :rows)
-        cols (defines/*game-info* :cols)
+        rows (gameinfo/map-rows)
+        cols (gameinfo/map-columns)
         [r c] (map + ant dir-vector)]
     [(cond
        (< r 0) (+ rows r)
@@ -103,3 +104,13 @@
     (set (filter #(not (nil? %))
             [(defines/offset-directions [row 0])
              (defines/offset-directions [0 col])]))))
+
+(defn seed-map
+  "Creates and returns a transient map with keys from the set all associated with the given value"
+  [keys value]
+  (loop [result-map (transient {})
+          keys-left keys]
+    (if (empty? keys-left)
+      result-map
+      (recur (assoc! result-map (first keys-left) value) (rest keys-left)))))
+
