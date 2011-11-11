@@ -89,11 +89,11 @@
  [2 0] nil, [2 1] nil, [2 2] nil, [2 3] nil, [2 4] nil, [2 5] nil, [2 6] nil, [2 7] nil, [2 8] nil, [2 9] [1 :south],
  [3 0] [1 :west], [3 1] nil, [3 2] nil, [3 3] nil, [3 4] nil, [3 5] nil, [3 6] nil, [3 7] [4 nil], [3 8] [3 :west], [3 9] [2 :west],
  [4 0] nil, [4 1] nil, [4 2] nil, [4 3] nil, [4 4] nil, [4 5] [1 :east], [4 6] [2 :east], [4 7] [3 :north], [4 8] nil, [4 9] [1 :north],
- [5 0] nil, [5 1] nil, [5 2] nil, [5 3] nil, [5 4] nil, [5 5] [1 nil], [5 6] [2 :south], [5 7] nil, [5 8] nil, [5 9] nil,
- [6 0] nil, [6 1] nil, [6 2] nil, [6 3] nil, [6 4] [1 nil], [6 5] [2 nil], [6 6] [3 :south], [6 7] [2 nil], [6 8] [1 nil], [6 9] nil,
+ [5 0] nil, [5 1] nil, [5 2] nil, [5 3] nil, [5 4] nil, [5 5] [1 :east], [5 6] [2 :south], [5 7] nil, [5 8] nil, [5 9] nil,
+ [6 0] nil, [6 1] nil, [6 2] nil, [6 3] nil, [6 4] [1 :east], [6 5] [2 :east], [6 6] [3 :south], [6 7] [2 :south], [6 8] [1 :south], [6 9] nil,
  [7 0] nil, [7 1] nil, [7 2] nil, [7 3] [1 :east], [7 4] [2 :east], [7 5] [3 :east], [7 6] [4 nil], [7 7] [3 :west], [7 8] [2 :west], [7 9] [1 :west],
- [8 0] nil, [8 1] nil, [8 2] nil, [8 3] nil, [8 4] [1 nil], [8 5] [2 nil], [8 6] [3 :north], [8 7] [2 nil], [8 8] [1 nil], [8 9] nil,
- [9 0] nil, [9 1] nil, [9 2] nil, [9 3] nil, [9 4] nil, [9 5] [1 nil], [9 6] [2 :north], [9 7] [1 nil], [9 8] nil, [9 9] nil})
+ [8 0] nil, [8 1] nil, [8 2] nil, [8 3] nil, [8 4] [1 :east], [8 5] [2 :east], [8 6] [3 :north], [8 7] [2 :north], [8 8] [1 :north], [8 9] nil,
+ [9 0] nil, [9 1] nil, [9 2] nil, [9 3] nil, [9 4] nil, [9 5] [1 :east], [9 6] [2 :north], [9 7] [1 :north], [9 8] nil, [9 9] nil})
 
 (def sample-diffusion-water-strings
   (list ". . . . . . 1 . . . "
@@ -112,19 +112,19 @@
         ". . . . . E E N . N "
         "                    "
         ". . . . . 1 2 X X . "
-        ". . . . . . S . . . "
+        ". . . . . E S . . . "
         "                    "
         ". . . . 1 2 3 2 1 . "
-        ". . . . . . S . . . "
+        ". . . . E E S S S . "
         "                    "
         ". . . 1 2 3 4 3 2 1 "
         ". . . E E E . W W W "
         "                    "
         ". . . . 1 2 3 2 1 . "
-        ". . . . . . N . . . "
+        ". . . . E E N N N . "
         "                    "
         ". . . . . 1 2 1 . . "
-        ". . . . . . N . . . "
+        ". . . . . E N N . . "
         "                    "))
 
 (deftest test-convert-diffusion-row-to-strings-water
@@ -142,3 +142,12 @@
       (take 3 (drop 21 sample-diffusion-water-strings)) 7
       (take 3 (drop 24 sample-diffusion-water-strings)) 8
       (take 3 (drop 27 sample-diffusion-water-strings)) 9)))
+
+(deftest test-diffuse-across-map-water
+  "Test that diffusion works as we'd expect"
+  (binding [defines/*game-info* sample-game-info-water
+            defines/*game-state* sample-game-state-water]
+    (is (= sample-diffusion-water-strings (convert-diffusion-to-strings
+                                            (diffuse-across-map sample-game-food-water
+                                                                (:water sample-game-state-water)
+                                                                4))))))

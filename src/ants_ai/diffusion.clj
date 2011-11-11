@@ -12,7 +12,9 @@
 
 (defn- run-diffusion
   "Helper function that actually does the diffusion. squares-to-process is expected to be a list of vectors in
-    the form [loc [strength dir]]. The third argument is expected to be transient."
+    the form [loc [strength dir]]. The third argument is expected to be transient. A side effect of implementation
+    (probably the direction order) is that this seems to prefer going east to going vertical, and going vertical
+    to going west."
   [squares-to-process skip-squares map-in-progress start-value min-value delta-fn]
   (if (empty? squares-to-process)             ; Is there anything left to process? If not, we're done
     map-in-progress
