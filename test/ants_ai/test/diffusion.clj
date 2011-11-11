@@ -81,9 +81,7 @@
 
 (def sample-game-food-water (list [3 7] [7 6]))                                     ; Note: [row column]!
 
-; The below is functionally identical to if the nil valued keys didn't exist (for our purposes)
 (def sample-diffusion-water
-  ; Diagonals not set correctly
  {[0 0] nil, [0 1] nil, [0 2] nil, [0 3] nil, [0 4] nil, [0 5] nil, [0 6] [1 :north], [0 7] nil, [0 8] nil, [0 9] nil,
  [1 0] nil, [1 1] nil, [1 2] nil, [1 3] nil, [1 4] nil, [1 5] nil, [1 6] nil, [1 7] nil, [1 8] nil, [1 9] nil,
  [2 0] nil, [2 1] nil, [2 2] nil, [2 3] nil, [2 4] nil, [2 5] nil, [2 6] nil, [2 7] nil, [2 8] nil, [2 9] [1 :south],
