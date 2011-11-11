@@ -38,7 +38,7 @@
     (list [:a [nil nil]]) [:a] nil
     (list [:a [1 nil]] [:b [1 nil]] [:c [1 nil]]) [:a :b :c] 1))
 
-(deftest test-convert-diffusion-row-to-strings
+(deftest test-convert-diffusion-row-to-strings-simple
   "Tests that conversion works as we'd expect"
   (binding [defines/*game-info* sample-game-info]
     (are [result row] (= result (convert-diffusion-row-to-strings sample-diffusion-basic row))
@@ -48,7 +48,15 @@
       (take 3 (drop 9 sample-diffusion-basic-strings)) 3
       (take 3 (drop 12 sample-diffusion-basic-strings)) 4)))
 
-(deftest test-convert-diffusion-to-strings
+(deftest test-convert-diffusion-to-strings-simple
   "Test that conversion works as we'd expect"
   (binding [defines/*game-info* sample-game-info]
     (is sample-diffusion-basic-strings (convert-diffusion-to-strings sample-diffusion-basic))))
+
+(deftest test-diffuse-across-map-simple
+  "Test that diffusion works as we'd expect"
+  (binding [defines/*game-info* sample-game-info]
+    (is (= sample-diffusion-basic-strings (convert-diffusion-to-strings
+                                            (diffuse-across-map (list [2 2])    ; The only square to fill from (center)
+                                                                #{}             ; No special squares to avoid
+                                                                2))))))         ; The value the special square gets

@@ -32,7 +32,7 @@
         :else                                                               ; Normal square, mark neighbors for recur
           (let [new-value (delta-fn square-strength)
                 ; The below is shorter than applying the opposite dir to each direction individually
-                the-directions (dissoc defines/directions (defines/opposite-directions square-from))
+                the-directions (disj defines/directions (defines/opposite-directions square-from))
                 dirs-and-weights (map #([new-value %]) the-directions)
                 ; A new list holding the new squares that need to go on the to-process list
                 new-to-process (map #(vector (utilities/move-ant square-loc (defines/opposite-directions %))
@@ -51,7 +51,7 @@
   ([source-squares bad-squares]
     (diffuse-across-map source-squares bad-squares 32))
   ([source-squares bad-squares start-value]
-    (diffuse-across-map source-squares bad-squares 32 1 dec))
+    (diffuse-across-map source-squares bad-squares start-value 1 dec))
   ([source-squares bad-squares start-value min-value delta-fn]
     (run-diffusion (seed-processing source-squares start-value)           ; Run the diffusion with the known squares,
                     bad-squares                                           ;   the squares that we can't fill in,
