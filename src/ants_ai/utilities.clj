@@ -105,12 +105,10 @@
             [(defines/offset-directions [row 0])
              (defines/offset-directions [0 col])]))))
 
-(defn seed-map
-  "Creates and returns a transient map with keys from the set all associated with the given value"
-  [keys value]
-  (loop [result-map (transient {})
-          keys-left keys]
-    (if (empty? keys-left)
-      result-map
-      (recur (assoc! result-map (first keys-left) value) (rest keys-left)))))
+(defn coalesce
+  "Replace nil values with the default."
+  [value default]
+  (if (nil? value)
+    default
+    value))
 
