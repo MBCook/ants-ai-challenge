@@ -65,7 +65,9 @@
   [diffusions row-number]
   (list
     (apply str (for [c (range (gameinfo/map-columns))]                            ; 1 3 7 2 . .
-                    (str (utilities/coalesce (first (diffusions [row-number c])) ".") " ")))
+                    (if (contains? (gamestate/water) [row-number c])
+                      "X "
+                      (str (utilities/coalesce (first (diffusions [row-number c])) ".") " "))))
     (apply str (for [c (range (gameinfo/map-columns))]                            ; E S S N . .
                     (str (utilities/coalesce (defines/direction-symols (second (diffusions [row-number c]))) ".") " ")))
     (apply str (for [c (range (gameinfo/map-columns))] "  "))))                   ; (just spaces to make reading easier
