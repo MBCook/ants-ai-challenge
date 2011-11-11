@@ -67,10 +67,12 @@
     (apply str (for [c (range (gameinfo/map-columns))]                            ; 1 3 7 2 . .
                     (str (utilities/coalesce (first (diffusions [row-number c])) ".") " ")))
     (apply str (for [c (range (gameinfo/map-columns))]                            ; E S S N . .
-                    (str (utilities/coalesce (defines/direction-symols (second (diffusions [row-number c]))) " ") " ")))
-    (apply str (for [c (range (gameinfo/map-columns))] ""))))                     ; (just spaces to make reading easier
+                    (str (utilities/coalesce (defines/direction-symols (second (diffusions [row-number c]))) ".") " ")))
+    (apply str (for [c (range (gameinfo/map-columns))] "  "))))                   ; (just spaces to make reading easier
 
-;(defn convert-diffusion-to-strings
-;  "Given a map of diffusion values, converts it into a list of lists of strings"
+(defn convert-diffusion-to-strings
+  "Given a map of diffusion values, converts it into a list of lists of strings"
+  [diffusions]
+  (apply concat (for [r (range (gameinfo/map-rows))] (convert-diffusion-row-to-strings diffusions r))))
 
 
