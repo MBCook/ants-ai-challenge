@@ -3,20 +3,28 @@
     (:require [clojure.set :as set]
               [ants-ai.interface :as interface]
               [ants-ai.defines :as defines]
+              [ants-ai.diffusion :as diffusion]
               [ants-ai.utilities :as utilities]
               [ants-ai.gamestate :as gamestate]
               [ants-ai.gameinfo :as gameinfo]
               [ants-ai.core :as core]))
 
 ; Move functions take only an ant.
-; They return a collection of directions that it would like to move this turn (possibly nil/empty)
+; They return a set of directions that it would like to move this turn (possibly nil/empty)
 
 (defn move-in-random-direction
   "Pick a random valid direction"
   [ant]
   defines/directions)
 
-(defn move-towards-food
+(defn move-towards-food-diffusion
+  "Move towards the closest piece of food the ant can see"
+  [ant]
+  (let [[_ dir] (get @defines/*food-map* ant)]
+    (when dir
+      #{dir})))
+
+(defn move-towards-food-classic
   "Move towards the closest piece of food the ant can see"
   [ant]
   (when (not-empty (gamestate/food))
@@ -58,7 +66,7 @@
   (when (not-empty valid-directions))
     (loop [functions-to-run {move-to-capture-hill :capture        ; First capture any hills we can see
                             move-away-from-enemy :run-away        ; Get away from nearby enemy ants
-                            move-towards-food :food               ; Then go for the closest food
+                            move-towards-food-diffusion :food       ; Then go for the closest food
                             move-in-random-direction :random}]    ; Nothing better? Go in a random direction
       (if (not-empty functions-to-run)
         (let [the-function-stuff (first functions-to-run)
@@ -103,6 +111,9 @@
   []
   (utilities/debug-log "")
   (utilities/debug-log "New turn")
+  (reset! defines/*food-map* (diffusion/diffuse-across-map (gamestate/food)
+                                                            (gamestate/water)
+                                                            9))
   (loop [ants (gamestate/my-ants)         ; Ants we're processing
          moves []]                        ; Moves we'll be making
     (if (empty? ants)                     ; Out of ants? We're done

@@ -8,8 +8,9 @@
 (declare ^{:dynamic true} *log-file*)
 
 (def ^{:dynamic true} *ant-last-moves* (atom {}))
+(def ^{:dynamic true} *food-map* (atom {}))
 
-(def logging-enabled false)
+(def logging-enabled true)
 
 (def directions #{:north :east :west :south})
 (def opposite-directions {:north :south, :east :west, :west :east, :south :north})
