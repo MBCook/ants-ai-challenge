@@ -149,3 +149,45 @@
                                             (diffuse-across-map sample-game-food-water
                                                                 (:water sample-game-state-water)
                                                                 4))))))
+
+;;;;;;;;;;;;;;;;
+;; Speed test ;;
+;;;;;;;;;;;;;;;;
+
+(def rows 150)
+(def cols 150)
+(def water-percent 0.1)
+(def food-percent (/ 17 (* rows cols)))
+(def food-value 9)
+
+(def sample-game-info-speed {:rows rows
+                              :cols cols})
+(def sample-game-state-speed {:water (loop [water-spots #{}
+                                            to-go (* rows cols water-percent)]
+                                        (if (<= to-go 0)
+                                          water-spots
+                                          (let [r (rand-int rows)
+                                                c (rand-int cols)
+                                                loc [r c]]
+                                            (if (contains?  water-spots loc)
+                                              (recur water-spots to-go)
+                                              (recur (conj water-spots loc) (dec to-go))))))})
+
+(def sample-game-food-speed (loop [water-spots (list)
+                                    to-go (* rows cols food-percent)]
+                                (if (<= to-go 0)
+                                  water-spots
+                                  (let [r (rand-int rows)
+                                        c (rand-int cols)
+                                        loc [r c]]
+                                    (if (contains?  water-spots loc)
+                                      (recur water-spots to-go)
+                                      (recur (conj water-spots loc) (dec to-go)))))))
+
+(deftest test-diffuse-across-map-speed
+  "This doesn't really test things, it simply exists to see how fast it runs in a bad case"
+  (binding [defines/*game-info* sample-game-info-speed
+            defines/*game-state* sample-game-state-speed]
+    (let [diffusion (time (diffuse-across-map sample-game-food-speed
+                                        (:water sample-game-state-speed) food-value))]
+      (is (= 0 0)))))

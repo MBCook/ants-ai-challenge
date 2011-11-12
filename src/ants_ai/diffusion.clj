@@ -39,8 +39,9 @@
                 ; A new list holding the new squares that need to go on the to-process list
                 new-to-process (map #(vector (utilities/move-ant square-loc (defines/opposite-directions %))
                                               [new-value %])
-                                    the-directions)]
-            (recur (concat squares-to-process new-to-process)
+                                    the-directions)
+                new-left-to-process (filter #(not (contains? map-in-progress (first %))) new-to-process)]
+            (recur (doall (concat still-to-process new-left-to-process))
                     skip-squares
                     (assoc! map-in-progress square-loc square-data)
                     start-value
