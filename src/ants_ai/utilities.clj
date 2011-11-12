@@ -52,19 +52,12 @@
             (= [r c] cur))
         ants))
 
-(defn unoccupied?
-  "If the given location does not contain an ant or food, return loc"
-  [loc]
-  (when (and (not (contains-ant? (gamestate/food) loc))
-             (not (contains-ant? (gamestate/my-ants) loc))
-             (not (contains-ant? (gamestate/enemy-ants) loc)))
-    loc))
-
 (defn passable?
   "Deteremine if the given location can be moved to. If so, loc is returned."
   [loc]
   (when (and (not (contains? (defines/*game-state* :water) loc))
-             (not (contains? gamestate/my-hills loc)))              ; We shouldn't move onto our own hills
+             (not (contains? (gamestate/food) loc))                   ; Can't walk onto newly spawned food
+             (not (contains? (gamestate/my-hills) loc)))              ; We shouldn't move onto our own hills
     loc))
 
 (defn move-ant
