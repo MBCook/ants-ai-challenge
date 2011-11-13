@@ -7,10 +7,14 @@
 (declare ^{:dynamic true} *game-state*)
 (declare ^{:dynamic true} *log-file*)
 
-(def ^{:dynamic true} *ant-last-moves* (atom {}))
-(def ^{:dynamic true} *food-map* (atom {}))
+; Per turns stuff
+(def ^{:dynamic true} *food-diffusion-map* (atom {}))
+(def ^{:dynamic true} *food-reservations* (atom {}))    ; loc -> set of ants
 
-(def logging-enabled true)
+; Permanent stuff
+(def ^{:dynamic true} *ant-last-moves* (atom {}))
+
+(def logging-enabled false)
 
 (def directions #{:north :east :west :south})
 (def opposite-directions {:north :south, :east :west, :west :east, :south :north})

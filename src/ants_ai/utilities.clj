@@ -55,7 +55,7 @@
 (defn passable?
   "Deteremine if the given location can be moved to. If so, loc is returned."
   [loc]
-  (when (and (not (contains? (defines/*game-state* :water) loc))
+  (when (and (not (contains? (gamestate/water) loc))
              (not (contains? (gamestate/food) loc))                   ; Can't walk onto newly spawned food
              (not (contains? (gamestate/my-hills) loc)))              ; We shouldn't move onto our own hills
     loc))
@@ -79,8 +79,11 @@
 (defn valid-move?
   "Check if moving an ant in the given direction is passable. If so,
   return the location that the ant would then be in."
-  [ant dir]
-  (passable? (move-ant ant dir)))
+  [ant dir occupied-locations]
+  (let [the-loc (move-ant ant dir)]
+    (when (and (passable? the-loc)
+              (not (contains? occupied-locations the-loc)))
+      the-loc)))
 
 (defn direction
   "Determine the directions needed to move to reach a specific location.

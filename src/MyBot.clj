@@ -14,29 +14,36 @@
 
 (defn move-in-random-direction
   "Pick a random valid direction"
-  [ant]
-  defines/directions)
+  [ant valid-directions last-move]
+;  (if (contains? valid-directions last-move)
+;    #{last-move}                                  ; Prefer the direction the ant was already going in
+;    valid-directions))
+  valid-directions)
 
 (defn move-towards-food-diffusion
   "Move towards the closest piece of food the ant can see"
-  [ant]
-  (let [[_ dir] (get @defines/*food-map* ant)]
+  [ant _ _]
+  (let [[_ dir] (get @defines/*food-diffusion-map* ant)]
     (when dir
       #{dir})))
 
 (defn move-towards-food-classic
   "Move towards the closest piece of food the ant can see"
-  [ant]
+  [ant _ _]
   (when (not-empty (gamestate/food))
     (let [food-distances (map #(vector % (utilities/distance-no-sqrt ant %)) (gamestate/food))
           food (sort-by #(second %) (filter #(<= (second %) (gameinfo/view-radius-squared)) food-distances))
-          best-spot (first (first food))]
+          best-spot (first (some #(let [reservations (@defines/*food-reservations* (first %))]  ; Gets first food square
+                                    (when (< reservations 2)                                    ; with less than 2 ants going
+                                      %))                                                       ; after it
+                                  food))]
       (when best-spot
-        (utilities/direction ant best-spot)))))
+        (swap! defines/*food-reservations* #(assoc % best-spot (inc (% best-spot))))        ; Make a reservation
+        (utilities/direction ant best-spot)))))                                             ; Send the move on
 
 (defn move-away-from-enemy
   "Move away from the closest enemy"
-  [ant]
+  [ant _ _]
   ; This rule doesn't apply if we are in visible range of one of our hills, or there are no enemies we know of
   (when (or (empty (gamestate/enemy-ants))
             (and (not-empty (gamestate/my-hills))
@@ -52,7 +59,7 @@
 
 (defn move-to-capture-hill
   "Move towards an enemy hill the ant can see"
-  [ant]
+  [ant _ _]
   (when (not-empty (gamestate/enemy-hills))
     (let [hill-distances (map #(vector % (utilities/distance-no-sqrt ant %)) (gamestate/enemy-hills))
           hills (sort-by #(second %) (filter #(<= (second %) (gameinfo/view-radius-squared)) hill-distances))]
@@ -62,17 +69,17 @@
 
 (defn find-move-through-functions
   "Run each function in turn for the ant, return the first non-nil direction we find that's valid"
-  [ant valid-directions]
+  [ant valid-directions ants-last-move]
   (when (not-empty valid-directions))
     (loop [functions-to-run {move-to-capture-hill :capture        ; First capture any hills we can see
                             move-away-from-enemy :run-away        ; Get away from nearby enemy ants
-                            move-towards-food-diffusion :food       ; Then go for the closest food
+                            move-towards-food-classic :food       ; Then go for the closest food
                             move-in-random-direction :random}]    ; Nothing better? Go in a random direction
       (if (not-empty functions-to-run)
         (let [the-function-stuff (first functions-to-run)
               the-function (key the-function-stuff)
               the-function-purpose (val the-function-stuff)
-              result (apply the-function ant [])]
+              result (apply the-function [ant valid-directions ants-last-move])]
           (if (empty? result)
             (recur (rest functions-to-run))                         ; No decision, try the next function
             (let [moves-to-choose-from (set/intersection result valid-directions)
@@ -87,13 +94,13 @@
 (defn process-ant
   "Take the given ant and figure out a move for them, returned as [ant dir result]"
   [ant occupied-locations]
-  (let [valid-moves (filter #(utilities/valid-move? ant %) defines/directions)  ; Ways ant could move
+  (let [valid-moves (filter #(utilities/valid-move? ant % occupied-locations) defines/directions)  ; Ways ant could move
         ants-last-move (@defines/*ant-last-moves* ant)                          ; The way the ant last moved
         ants-way-back (defines/opposite-directions ants-last-move)
         valid-directions (if (= (list ants-way-back) valid-moves)               ; Be sure that if we only have one valid
                             (set valid-moves)                                   ; move that it's always available
                             (set (filter #(not= % ants-way-back) valid-moves)))
-        dir (find-move-through-functions ant valid-directions)                  ; The above is so our ant won't move backwards
+        dir (find-move-through-functions ant valid-directions ants-last-move)   ; The above is so our ant won't move backwards
         result (when dir
                 (utilities/move-ant ant dir))]
     (cond
@@ -106,14 +113,24 @@
       :else                                                       ; We're good
         [ant dir result])))
 
+(defn reset-per-turn-atoms
+  "Resets the atoms that only make sense during a turn"
+  []
+;  (reset! defines/*food-map* (diffusion/diffuse-across-map (gamestate/food)
+;                                                            (gamestate/water)
+;                                                            9))
+  (reset! defines/*food-reservations* (loop [reservations {}
+                                             food-to-go (gamestate/food)]
+                                        (if (empty? food-to-go)
+                                          reservations
+                                          (recur (assoc reservations (first food-to-go) 0) (rest food-to-go))))))
+
 (defn process-ants-for-moves
   "Process each ant in turn, gathering up their moves in the form [loc dir result]"
   []
   (utilities/debug-log "")
   (utilities/debug-log "New turn")
-  (reset! defines/*food-map* (diffusion/diffuse-across-map (gamestate/food)
-                                                            (gamestate/water)
-                                                            9))
+  (reset-per-turn-atoms)
   (loop [ants (gamestate/my-ants)         ; Ants we're processing
          moves []]                        ; Moves we'll be making
     (if (empty? ants)                     ; Out of ants? We're done
