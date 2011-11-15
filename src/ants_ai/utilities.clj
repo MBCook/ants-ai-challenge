@@ -60,6 +60,17 @@
              (not (contains? (gamestate/my-hills) loc)))              ; We shouldn't move onto our own hills
     loc))
 
+(defn clamp
+  "Lock a value in a range"
+  [val lim]
+  (cond
+    (neg? val)
+      (+ val lim)
+    (>= val lim)
+      (- val lim)
+    :else
+      val))
+
 (defn move-ant
   "Move the ant in the given direction and return the new location"
   [ant dir]
@@ -67,14 +78,7 @@
         rows (gameinfo/map-rows)
         cols (gameinfo/map-columns)
         [r c] (map + ant dir-vector)]
-    [(cond
-       (< r 0) (+ rows r)
-       (>= r rows) (- r rows)
-       :else r)
-     (cond
-       (< c 0) (+ cols c)
-       (>= c cols) (- c cols)
-       :else c)]))
+    [(clamp r rows) (clamp c cols)]))
 
 (defn valid-move?
   "Check if moving an ant in the given direction is passable. If so,
@@ -108,3 +112,29 @@
     default
     value))
 
+(defn get-line-of-sight-block
+  "Runs through a line of sight, returning the first blocked square"
+  ([location location-two test-fn]
+    (let [[r c] location
+          [delt-r delt-c] (unit-distance location location-two) ; Figure out the direction to move in (+/- for row/col)
+          manhattan-distance (+ (safe-abs delt-r) (safe-abs delt-c))
+          r-step (/ delt-r manhattan-distance)
+          c-step (/ delt-c manhattan-distance)]
+      (get-line-of-sight-block r c location-two test-fn r-step c-step)))
+  ([row col location-two test-fn r-step c-step]
+    (let [r (clamp row (gameinfo/map-rows))                   ; Fix the co-ords
+          c (clamp col (gameinfo/map-columns))]
+      (cond
+        (= [r c] location-two)
+          nil                                                 ; We hit the end condition
+        (apply test-fn [[(int r) (int c)]])
+          [r c]                                               ; We found a block, return the location
+        :else
+          (recur (+ r-step r) (+ c-step c)                    ; Move on to the next square
+                 location-two test-fn
+                 r-step c-step)))))
+
+(defn is-line-of-site-clear?
+  "Checks if a line of site is clear"
+  [location location-two test-fn]
+  (not (get-line-of-sight-block location location-two test-fn)))

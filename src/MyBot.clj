@@ -27,8 +27,8 @@
     (when dir
       #{dir})))
 
-(defn move-towards-food-classic
-  "Move towards the closest piece of food the ant can see"
+(defn move-towards-food-res
+  "Move towards the closest piece of food the ant can see, with reservations"
   [ant _ _]
   (when (not-empty (gamestate/food))
     (let [food-distances (map #(vector % (utilities/distance-no-sqrt ant %)) (gamestate/food))
@@ -39,6 +39,18 @@
                                   food))]
       (when best-spot
         (swap! defines/*food-reservations* #(assoc % best-spot (inc (% best-spot))))        ; Make a reservation
+        (utilities/direction ant best-spot)))))                                             ; Send the move on
+
+(defn move-towards-food-classic
+  "Move towards the closest piece of food the ant can see"
+  [ant _ _]
+  (when (not-empty (gamestate/food))
+    (let [food-distances (map #(vector % (utilities/distance-no-sqrt ant %)) (gamestate/food))
+          food (sort-by #(second %) (filter #(<= (second %) (gameinfo/view-radius-squared)) food-distances))
+          water-test-fn #(contains? (gamestate/water) %)
+          visible-food (filter #(utilities/is-line-of-site-clear? ant (first %) water-test-fn) food)
+          best-spot (first (first visible-food))]
+      (when best-spot
         (utilities/direction ant best-spot)))))                                             ; Send the move on
 
 (defn move-away-from-enemy
@@ -62,10 +74,13 @@
   [ant _ _]
   (when (not-empty (gamestate/enemy-hills))
     (let [hill-distances (map #(vector % (utilities/distance-no-sqrt ant %)) (gamestate/enemy-hills))
-          hills (sort-by #(second %) (filter #(<= (second %) (gameinfo/view-radius-squared)) hill-distances))]
-      (when (not-empty hills)
-        (let [best-spot (first (first hills))]
-          (utilities/direction ant best-spot))))))
+          hills (sort-by #(second %) (filter #(<= (second %) (gameinfo/view-radius-squared)) hill-distances))
+;          water-test-fn #(contains? (gamestate/water) %)
+;          visible-hills (filter #(utilities/is-line-of-site-clear? ant (first %) water-test-fn) hills)
+          visible-hills hills
+          best-spot (first (first visible-hills))]
+      (when best-spot
+        (utilities/direction ant best-spot)))))
 
 (defn find-move-through-functions
   "Run each function in turn for the ant, return the first non-nil direction we find that's valid"
@@ -130,7 +145,7 @@
   []
   (utilities/debug-log "")
   (utilities/debug-log "New turn")
-  (reset-per-turn-atoms)
+;  (reset-per-turn-atoms)
   (loop [ants (gamestate/my-ants)         ; Ants we're processing
          moves []]                        ; Moves we'll be making
     (if (empty? ants)                     ; Out of ants? We're done
