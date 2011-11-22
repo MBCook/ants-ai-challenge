@@ -21,3 +21,8 @@
   "Get the number of map columns"
   []
   (:cols defines/*game-info*))
+
+(defn rand-seed
+  "Get the suggested RNG seed"
+  []
+  (:player_seed defines/*game-info*))

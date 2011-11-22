@@ -107,7 +107,7 @@
             (recur (rest functions-to-run))                         ; No decision, try the next function
             (let [moves-to-choose-from (set/intersection result valid-directions)
                   dir (when (not-empty moves-to-choose-from)
-                        (rand-nth (vec moves-to-choose-from)))]
+                        (utilities/seeded-rand-nth (vec moves-to-choose-from)))]
               (if dir                                               ; Was one of the moves valid?
                 (do
                   (utilities/debug-log "Ant at " ant " doing " the-function-purpose ", going " dir)
@@ -171,6 +171,7 @@
 (defn simple-bot []
   "Core loop for the bot"
   (interface/setup-visualizer)
+  (reset! defines/*seeded-rng* (new java.util.Random (gameinfo/rand-seed)))
   (doseq [[ant dir res] (process-ants-for-moves)]
     (when dir
       (interface/issue-move ant dir)                      ; Issue the move to the server

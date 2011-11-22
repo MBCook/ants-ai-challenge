@@ -138,3 +138,14 @@
   "Checks if a line of site is clear"
   [location location-two test-fn]
   (not (get-line-of-sight-block location location-two test-fn)))
+
+(defn is-line-of-site-clear?
+  "Checks if a line of site is clear"
+  [location location-two test-fn]
+  (not (get-line-of-sight-block location location-two test-fn)))
+
+(defn seeded-rand-nth
+  "Gets a random element from a collection using our seeded RNG"
+  [col]
+  (let [num (.nextInt @defines/*seeded-rng* (count col))]
+    (nth col num)))

@@ -13,6 +13,7 @@
 
 ; Permanent stuff
 (def ^{:dynamic true} *ant-last-moves* (atom {}))
+(def ^{:dynamic true} *seeded-rng* (atom nil))
 
 (def logging-enabled false)
 (def visualizer-enabled true)
