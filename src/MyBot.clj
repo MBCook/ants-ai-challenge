@@ -39,6 +39,8 @@
                                   food))]
       (when best-spot
         (swap! defines/*food-reservations* #(assoc % best-spot (inc (% best-spot))))        ; Make a reservation
+        (interface/visualizer-color :food)
+        (interface/visualize-arrow ant best-spot)
         (utilities/direction ant best-spot)))))                                             ; Send the move on
 
 (defn move-towards-food-classic
@@ -51,6 +53,8 @@
           visible-food (filter #(utilities/is-line-of-site-clear? ant (first %) water-test-fn) food)
           best-spot (first (first visible-food))]
       (when best-spot
+        (interface/visualizer-color :food)
+        (interface/visualize-arrow ant best-spot)
         (utilities/direction ant best-spot)))))                                             ; Send the move on
 
 (defn move-away-from-enemy
@@ -67,6 +71,8 @@
         ants (sort-by #(second %) (filter #(<= (second %) (max 9 (gameinfo/attack-radius-squared))) ant-distances))]
     (when (not-empty ants)
       (let [worst-ant (first (first ants))]
+        (interface/visualizer-color :ant)
+        (interface/visualize-arrow worst-ant ant)
         (set/difference defines/directions (utilities/direction ant worst-ant))))))
 
 (defn move-to-capture-hill
@@ -80,6 +86,8 @@
           visible-hills hills
           best-spot (first (first visible-hills))]
       (when best-spot
+        (interface/visualizer-color :hill)
+        (interface/visualize-arrow ant best-spot)
         (utilities/direction ant best-spot)))))
 
 (defn find-move-through-functions
@@ -103,6 +111,8 @@
               (if dir                                               ; Was one of the moves valid?
                 (do
                   (utilities/debug-log "Ant at " ant " doing " the-function-purpose ", going " dir)
+                  (interface/visualize-info ant (str "Reason: " the-function-purpose))
+                  (interface/visualize-info ant (str "Direction: " dir))
                   dir)
                 (recur (rest functions-to-run)))))))))
 
@@ -160,6 +170,7 @@
 
 (defn simple-bot []
   "Core loop for the bot"
+  (interface/setup-visualizer)
   (doseq [[ant dir res] (process-ants-for-moves)]
     (when dir
       (interface/issue-move ant dir)                      ; Issue the move to the server

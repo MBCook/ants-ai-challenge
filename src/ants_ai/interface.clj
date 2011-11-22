@@ -44,3 +44,39 @@
   is [:north :south :east :west]"
   [[row col :as ant] dir]
   (println "o" row col (defines/direction-symols dir)))
+
+(defn setup-visualizer
+  "Setup the visualizer with some basic values"
+  []
+  (when defines/visualizer-enabled
+    (println "v" "setLineWidth" 1)))
+
+(defn visualizer-color
+  "Setup the visualizer with given color"
+  [why]
+  (when defines/visualizer-enabled
+    (condp = why
+      :food
+        (println "v" "setLineColor" 255 179 232 1)
+      :ant
+        (println "v" "setLineColor" 255 50 50 1)
+      :hill
+        (println "v" "setLineColor" 255 181 77 1))))
+
+(defn visualize-arrow
+  "Draw an arrow on the visualizer from location to location 2"
+  [location location-two]
+  (when defines/visualizer-enabled
+    (println "v" "arrow" (first location) (second location) (first location-two) (second location-two))))
+
+(defn visualize-line
+  "Draw a line on the visualizer from location to location 2"
+  [location location-two]
+  (when defines/visualizer-enabled
+    (println "v" "line" (first location) (second location) (first location-two) (second location-two))))
+
+(defn visualize-info
+  "Attach information to the replay"
+  [location information]
+  (when defines/visualizer-enabled
+    (println "i" (first location) (second location) information)))

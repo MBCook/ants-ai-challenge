@@ -15,6 +15,7 @@
 (def ^{:dynamic true} *ant-last-moves* (atom {}))
 
 (def logging-enabled false)
+(def visualizer-enabled true)
 
 (def directions #{:north :east :west :south})
 (def opposite-directions {:north :south, :east :west, :west :east, :south :north})
