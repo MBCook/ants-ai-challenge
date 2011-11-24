@@ -114,8 +114,9 @@
 
 (defn get-line-of-sight-block
   "Runs through a line of sight, returning the first blocked square"
-  ([location location-two test-fn]
+  ([location [r2 c2] test-fn]
     (let [[r c] location
+          location-two [r2 c2]
           [delt-r delt-c] (unit-distance location location-two) ; Figure out the direction to move in (+/- for row/col)
           manhattan-distance (+ (safe-abs delt-r) (safe-abs delt-c))
           r-step (/ delt-r manhattan-distance)
@@ -133,11 +134,6 @@
           (recur (+ r-step r) (+ c-step c)                    ; Move on to the next square
                  location-two test-fn
                  r-step c-step)))))
-
-(defn is-line-of-site-clear?
-  "Checks if a line of site is clear"
-  [location location-two test-fn]
-  (not (get-line-of-sight-block location location-two test-fn)))
 
 (defn is-line-of-site-clear?
   "Checks if a line of site is clear"

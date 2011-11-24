@@ -184,10 +184,10 @@
                                       (recur water-spots to-go)
                                       (recur (conj water-spots loc) (dec to-go)))))))
 
-(deftest test-diffuse-across-map-speed
-  "This doesn't really test things, it simply exists to see how fast it runs in a bad case"
-  (binding [defines/*game-info* sample-game-info-speed
-            defines/*game-state* sample-game-state-speed]
-    (let [diffusion (time (diffuse-across-map sample-game-food-speed
-                                        (:water sample-game-state-speed) food-value))]
-      (is (= 0 0)))))
+;(deftest test-diffuse-across-map-speed
+;  "This doesn't really test things, it simply exists to see how fast it runs in a bad case"
+;  (binding [defines/*game-info* sample-game-info-speed
+;            defines/*game-state* sample-game-state-speed]
+;    (let [diffusion (time (diffuse-across-map sample-game-food-speed
+;                                        (:water sample-game-state-speed) food-value))]
+;      (is (= 0 0)))))

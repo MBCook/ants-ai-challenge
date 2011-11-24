@@ -59,20 +59,43 @@
 (defn move-away-from-enemy
   "Move away from the closest enemy"
   [ant _ _]
-  ; This rule doesn't apply if we are in visible range of one of our hills, or there are no enemies we know of
-  (when (or (empty (gamestate/enemy-ants))
-            (and (not-empty (gamestate/my-hills))
-                 (some #(<= (second %) (gameinfo/view-radius-squared))
-                    (map #(utilities/distance-no-sqrt ant %) (gamestate/my-hills)))))
-    nil)
-  ; The rule also doesn't apply if there are no enemy ants
-  (let [ant-distances (map #(vector % (utilities/distance-no-sqrt ant %)) (gamestate/enemy-ants))
-        ants (sort-by #(second %) (filter #(<= (second %) (max 16 (gameinfo/attack-radius-squared))) ant-distances))]
-    (when (not-empty ants)
-      (let [worst-ant (first (first ants))]
-        (interface/visualizer-color :ant)
-        (interface/visualize-arrow worst-ant ant)
-        (set/difference defines/directions (utilities/direction ant worst-ant))))))
+  ; This rule doesn't apply if we are in visible range of one of our hills, have no hills, or know of no enemies
+  (if (or (empty? (gamestate/enemy-ants))
+          (empty? (gamestate/my-hills))
+          (some #(<= (second %) (gameinfo/view-radius-squared))
+              (map #(vector % (utilities/distance-no-sqrt ant %)) (gamestate/my-hills))))
+    nil
+    ; The rule also doesn't apply if there are no enemy ants
+    (let [ant-distances (map #(vector % (utilities/distance-no-sqrt ant %)) (gamestate/enemy-ants))
+          ants (sort-by #(second %) (filter #(<= (second %) (max 64 (gameinfo/attack-radius-squared))) ant-distances))]
+      (when (not-empty ants)
+        (let [worst-ant (first (first ants))]
+          (interface/visualizer-color :ant)
+          (interface/visualize-arrow worst-ant ant)
+          (set/difference defines/directions (utilities/direction ant worst-ant)))))))
+
+(defn move-to-defend-our-hills
+  "Reinforce our hill if any enemy is near"
+  [ant _ _]
+  ; This rule doesn't apply if we don't know of any enemies, have no hills, or are on a hill
+  (if (or (empty? (gamestate/enemy-ants))
+            (empty? (gamestate/my-hills))
+            (contains? (gamestate/my-hills) ant))
+    nil
+    ; Find our closest hill (line of site)
+    (let [hill-distances (map #(vector % (utilities/distance-no-sqrt ant %)) (gamestate/my-hills))
+          hills (sort-by #(second %) hill-distances)
+          water-test-fn #(contains? (gamestate/water) %)
+          visible-hills (filter #(utilities/is-line-of-site-clear? ant (first %) water-test-fn) hills)
+          closest-hill (first (first visible-hills))]
+      (when closest-hill    ; Check to see if any enemies are close
+        (let [enemy-distances (map #(vector % (utilities/distance-no-sqrt closest-hill %)) (gamestate/enemy-ants))
+              bad-ants (sort-by #(second %) (filter #(<= (second %) (* 4 (gameinfo/view-radius-squared))) enemy-distances))
+              with-line-of-attack (filter #(utilities/is-line-of-site-clear? closest-hill (first %) water-test-fn) bad-ants)]
+          (when (not-empty with-line-of-attack)   ; Head back
+            (interface/visualizer-color :defend)
+            (interface/visualize-arrow ant closest-hill)
+            (set/difference defines/directions (utilities/direction ant closest-hill))))))))
 
 (defn move-to-capture-hill
   "Move towards an enemy hill the ant can see"
@@ -82,7 +105,7 @@
           hills (sort-by #(second %) (filter #(<= (second %) (gameinfo/view-radius-squared)) hill-distances))
           water-test-fn #(contains? (gamestate/water) %)
           visible-hills (filter #(utilities/is-line-of-site-clear? ant (first %) water-test-fn) hills)
-          visible-hills hills
+          fake (interface/visualize-info ant (str (count hill-distances) ":" (count hills) ":" (count visible-hills)))
           best-spot (first (first visible-hills))]
       (when best-spot
         (interface/visualizer-color :hill)
@@ -93,7 +116,8 @@
   "Run each function in turn for the ant, return the first non-nil direction we find that's valid"
   [ant valid-directions ants-last-move]
   (when (not-empty valid-directions))
-    (loop [functions-to-run {move-to-capture-hill :capture        ; First capture any hills we can see
+    (loop [functions-to-run {move-to-defend-our-hills :defense    ; Don't let them take our hills!
+                            move-to-capture-hill :capture         ; First capture any hills we can see
                             move-away-from-enemy :run-away        ; Get away from nearby enemy ants
                             move-towards-food-classic :food       ; Then go for the closest food
                             move-in-random-direction :random}]    ; Nothing better? Go in a random direction
@@ -152,6 +176,7 @@
   []
   (utilities/debug-log "")
   (utilities/debug-log "New turn")
+(utilities/debug-log (gamestate/enemy-ants ))
 ;  (reset-per-turn-atoms)
   (loop [ants (gamestate/my-ants)         ; Ants we're processing
          moves []]                        ; Moves we'll be making (a list and not a set because order matters)

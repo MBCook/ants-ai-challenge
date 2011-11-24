@@ -61,7 +61,11 @@
       :ant
         (println "v" "setLineColor" 255 50 50 1)
       :hill
-        (println "v" "setLineColor" 255 181 77 1))))
+        (println "v" "setLineColor" 255 181 77 1)
+      :defend
+        (println "v" "setLineColor" 57 224 27 1)
+      :block
+        (println "v" "setLineColor" 0 0 0 1))))
 
 (defn visualize-arrow
   "Draw an arrow on the visualizer from location to location 2"
