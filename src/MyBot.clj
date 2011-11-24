@@ -15,33 +15,32 @@
 (defn move-in-random-direction
   "Pick a random valid direction"
   [ant valid-directions last-move]
-;  (if (contains? valid-directions last-move)
-;    #{last-move}                                  ; Prefer the direction the ant was already going in
-;    valid-directions))
-  valid-directions)
+  (if (contains? valid-directions last-move)
+    #{last-move}                                  ; Prefer the direction the ant was already going in
+    valid-directions))
 
-(defn move-towards-food-diffusion
-  "Move towards the closest piece of food the ant can see"
-  [ant _ _]
-  (let [[_ dir] (get @defines/*food-diffusion-map* ant)]
-    (when dir
-      #{dir})))
+;(defn move-towards-food-diffusion
+;  "Move towards the closest piece of food the ant can see"
+;  [ant _ _]
+;  (let [[_ dir] (get @defines/*food-diffusion-map* ant)]
+;    (when dir
+;      #{dir})))
 
-(defn move-towards-food-res
-  "Move towards the closest piece of food the ant can see, with reservations"
-  [ant _ _]
-  (when (not-empty (gamestate/food))
-    (let [food-distances (map #(vector % (utilities/distance-no-sqrt ant %)) (gamestate/food))
-          food (sort-by #(second %) (filter #(<= (second %) (gameinfo/view-radius-squared)) food-distances))
-          best-spot (first (some #(let [reservations (@defines/*food-reservations* (first %))]  ; Gets first food square
-                                    (when (< reservations 2)                                    ; with less than 2 ants going
-                                      %))                                                       ; after it
-                                  food))]
-      (when best-spot
-        (swap! defines/*food-reservations* #(assoc % best-spot (inc (% best-spot))))        ; Make a reservation
-        (interface/visualizer-color :food)
-        (interface/visualize-arrow ant best-spot)
-        (utilities/direction ant best-spot)))))                                             ; Send the move on
+;(defn move-towards-food-res
+;  "Move towards the closest piece of food the ant can see, with reservations"
+;  [ant _ _]
+;  (when (not-empty (gamestate/food))
+;    (let [food-distances (map #(vector % (utilities/distance-no-sqrt ant %)) (gamestate/food))
+;          food (sort-by #(second %) (filter #(<= (second %) (gameinfo/view-radius-squared)) food-distances))
+;          best-spot (first (some #(let [reservations (@defines/*food-reservations* (first %))]  ; Gets first food square
+;                                    (when (< reservations 2)                                    ; with less than 2 ants going
+;                                      %))                                                       ; after it
+;                                  food))]
+;      (when best-spot
+;        (swap! defines/*food-reservations* #(assoc % best-spot (inc (% best-spot))))        ; Make a reservation
+;        (interface/visualizer-color :food)
+;        (interface/visualize-arrow ant best-spot)
+;        (utilities/direction ant best-spot)))))                                             ; Send the move on
 
 (defn move-towards-food-classic
   "Move towards the closest piece of food the ant can see"
@@ -53,8 +52,8 @@
           visible-food (filter #(utilities/is-line-of-site-clear? ant (first %) water-test-fn) food)
           best-spot (first (first visible-food))]
       (when best-spot
-        (interface/visualizer-color :food)
-        (interface/visualize-arrow ant best-spot)
+;        (interface/visualizer-color :food)
+;        (interface/visualize-arrow ant best-spot)
         (utilities/direction ant best-spot)))))                                             ; Send the move on
 
 (defn move-away-from-enemy
@@ -68,7 +67,7 @@
     nil)
   ; The rule also doesn't apply if there are no enemy ants
   (let [ant-distances (map #(vector % (utilities/distance-no-sqrt ant %)) (gamestate/enemy-ants))
-        ants (sort-by #(second %) (filter #(<= (second %) (max 9 (gameinfo/attack-radius-squared))) ant-distances))]
+        ants (sort-by #(second %) (filter #(<= (second %) (max 16 (gameinfo/attack-radius-squared))) ant-distances))]
     (when (not-empty ants)
       (let [worst-ant (first (first ants))]
         (interface/visualizer-color :ant)
@@ -81,8 +80,8 @@
   (when (not-empty (gamestate/enemy-hills))
     (let [hill-distances (map #(vector % (utilities/distance-no-sqrt ant %)) (gamestate/enemy-hills))
           hills (sort-by #(second %) (filter #(<= (second %) (gameinfo/view-radius-squared)) hill-distances))
-;          water-test-fn #(contains? (gamestate/water) %)
-;          visible-hills (filter #(utilities/is-line-of-site-clear? ant (first %) water-test-fn) hills)
+          water-test-fn #(contains? (gamestate/water) %)
+          visible-hills (filter #(utilities/is-line-of-site-clear? ant (first %) water-test-fn) hills)
           visible-hills hills
           best-spot (first (first visible-hills))]
       (when best-spot
@@ -112,7 +111,9 @@
                 (do
                   (utilities/debug-log "Ant at " ant " doing " the-function-purpose ", going " dir)
                   (interface/visualize-info ant (str "Reason: " the-function-purpose))
+                  (interface/visualize-info ant (str "Valid moves: " valid-directions))
                   (interface/visualize-info ant (str "Direction: " dir))
+                  (interface/visualize-info ant (str "Last move: " ants-last-move))
                   dir)
                 (recur (rest functions-to-run)))))))))
 
@@ -131,10 +132,6 @@
     (cond
       (nil? dir)                                                  ; No valid moves? Stand still
         [ant nil ant]
-      (utilities/contains-ant? occupied-locations result)         ; Make sure we won't run into one of our other ants
-        (do
-          (utilities/debug-log "Ant at " ant " avoiding collision at " result)
-          [ant nil ant])
       :else                                                       ; We're good
         [ant dir result])))
 
@@ -157,7 +154,7 @@
   (utilities/debug-log "New turn")
 ;  (reset-per-turn-atoms)
   (loop [ants (gamestate/my-ants)         ; Ants we're processing
-         moves []]                        ; Moves we'll be making
+         moves []]                        ; Moves we'll be making (a list and not a set because order matters)
     (if (empty? ants)                     ; Out of ants? We're done
       moves
       (let [ant (first ants)                                              ; Ant we're working with

@@ -86,7 +86,7 @@
   [ant dir occupied-locations]
   (let [the-loc (move-ant ant dir)]
     (when (and (passable? the-loc)
-              (not (contains? occupied-locations the-loc)))
+              (not (contains-ant? occupied-locations the-loc)))
       the-loc)))
 
 (defn direction
