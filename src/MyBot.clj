@@ -106,7 +106,6 @@
           hills (sort-by #(second %) (filter #(<= (second %) (gameinfo/view-radius-squared)) hill-distances))
           water-test-fn #(contains? (gamestate/water) %)
           visible-hills (filter #(utilities/is-line-of-site-clear? ant (first %) water-test-fn) hills)
-          fake (interface/visualize-info ant (str (count hill-distances) ":" (count hills) ":" (count visible-hills)))
           best-spot (first (first visible-hills))]
       (when best-spot
         (interface/visualizer-color :hill)
