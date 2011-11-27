@@ -16,7 +16,7 @@
 (def ^{:dynamic true} *seeded-rng* (atom nil))
 
 (def logging-enabled false)
-(def visualizer-enabled false)
+(def visualizer-enabled true)
 
 (def directions #{:north :east :west :south})
 (def opposite-directions {:north :south, :east :west, :west :east, :south :north})
@@ -35,6 +35,12 @@
                          [0 -1] :west
                          [1 0] :south
                          [0 1] :east})
+
+(def four-point-defense (list [-1 -1] [-1 1] [1 1] [1 -1]))
+(def twelve-point-defense (list [-1 -1] [-2 -1] [-1 -2] [-1 1] [-2 1] [-1 2]
+                                [1 1] [2 1] [1 2] [1 -1] [2 -1] [1 -2]))
+(def sixteen-point-defense (list [-1 -1] [-2 -1] [-1 -2] [-2 -2] [-1 1] [-2 1] [-1 2] [-2 2]
+                                  [1 1] [2 1] [1 2] [2 2] [1 -1] [2 -1] [1 -2] [2 -2]))
 
 (def messages {:ready #"ready"
                :turn #"turn [0-9]+"

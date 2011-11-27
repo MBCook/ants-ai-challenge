@@ -15,7 +15,8 @@
 (defn move-in-random-direction
   "Pick a random valid direction"
   [ant valid-directions last-move]
-  (if (contains? valid-directions last-move)
+  (if (and (contains? valid-directions last-move)
+            (not (utilities/seeded-rand-chance 20)))  ; 5% of the time forget what we were doing
     #{last-move}                                  ; Prefer the direction the ant was already going in
     valid-directions))
 
@@ -70,8 +71,8 @@
           ants (sort-by #(second %) (filter #(<= (second %) (max 64 (gameinfo/attack-radius-squared))) ant-distances))]
       (when (not-empty ants)
         (let [worst-ant (first (first ants))]
-          (interface/visualizer-color :ant)
-          (interface/visualize-arrow worst-ant ant)
+;          (interface/visualizer-color :ant)
+;          (interface/visualize-arrow worst-ant ant)
           (set/difference defines/directions (utilities/direction ant worst-ant)))))))
 
 (defn move-to-defend-our-hills
@@ -90,12 +91,12 @@
           closest-hill (first (first visible-hills))]
       (when closest-hill    ; Check to see if any enemies are close
         (let [enemy-distances (map #(vector % (utilities/distance-no-sqrt closest-hill %)) (gamestate/enemy-ants))
-              bad-ants (sort-by #(second %) (filter #(<= (second %) (* 4 (gameinfo/view-radius-squared))) enemy-distances))
+              bad-ants (sort-by #(second %) (filter #(<= (second %) (* 2.25 (gameinfo/view-radius-squared))) enemy-distances))
               with-line-of-attack (filter #(utilities/is-line-of-site-clear? closest-hill (first %) water-test-fn) bad-ants)]
           (when (not-empty with-line-of-attack)   ; Head back
             (interface/visualizer-color :defend)
             (interface/visualize-arrow ant closest-hill)
-            (set/difference defines/directions (utilities/direction ant closest-hill))))))))
+            (utilities/direction ant closest-hill)))))))
 
 (defn move-to-capture-hill
   "Move towards an enemy hill the ant can see"
@@ -114,7 +115,7 @@
 
 (defn find-move-through-functions
   "Run each function in turn for the ant, return the first non-nil direction we find that's valid"
-  [ant valid-directions ants-last-move]
+  [ant valid-directions valid-directions-with-back ants-last-move]
   (when (not-empty valid-directions))
     (loop [functions-to-run {move-to-defend-our-hills :defense    ; Don't let them take our hills!
                             move-to-capture-hill :capture         ; First capture any hills we can see
@@ -128,16 +129,21 @@
               result (apply the-function [ant valid-directions ants-last-move])]
           (if (empty? result)
             (recur (rest functions-to-run))                         ; No decision, try the next function
-            (let [moves-to-choose-from (set/intersection result valid-directions)
+            (let [moves-to-choose-from (set/intersection result (if (= the-function-purpose :defense)
+                                                                    valid-directions-with-back
+                                                                    valid-directions))  ; In defense, we can reverse
                   dir (when (not-empty moves-to-choose-from)
                         (utilities/seeded-rand-nth (vec moves-to-choose-from)))]
               (if dir                                               ; Was one of the moves valid?
                 (do
                   (utilities/debug-log "Ant at " ant " doing " the-function-purpose ", going " dir)
-                  (interface/visualize-info ant (str "Reason: " the-function-purpose))
-                  (interface/visualize-info ant (str "Valid moves: " valid-directions))
-                  (interface/visualize-info ant (str "Direction: " dir))
-                  (interface/visualize-info ant (str "Last move: " ants-last-move))
+;                  (interface/visualize-info ant (str "Reason: " the-function-purpose))
+;                  (interface/visualize-info ant (str "Valid moves: " valid-directions))
+;                  (interface/visualize-info ant (str "Valid moves back: " valid-directions-with-back))
+;                  (interface/visualize-info ant (str "Result: " result))
+;                  (interface/visualize-info ant (str "Moves to choose from: " moves-to-choose-from))
+;                  (interface/visualize-info ant (str "Direction: " dir))
+;                  (interface/visualize-info ant (str "Last move: " ants-last-move))
                   dir)
                 (recur (rest functions-to-run)))))))))
 
@@ -149,8 +155,8 @@
         ants-way-back (defines/opposite-directions ants-last-move)
         valid-directions (if (= (list ants-way-back) valid-moves)               ; Be sure that if we only have one valid
                             (set valid-moves)                                   ; move that it's always available
-                            (set (filter #(not= % ants-way-back) valid-moves)))
-        dir (find-move-through-functions ant valid-directions ants-last-move)   ; The above is so our ant won't move backwards
+                            (set (filter #(not= % ants-way-back) valid-moves))) ; This is to allow us to not move back
+        dir (find-move-through-functions ant valid-directions (set valid-moves) ants-last-move)
         result (when dir
                 (utilities/move-ant ant dir))]
     (cond

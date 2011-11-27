@@ -145,3 +145,9 @@
   [col]
   (let [num (.nextInt @defines/*seeded-rng* (count col))]
     (nth col num)))
+
+(defn seeded-rand-chance
+  "Returns true one in N times"
+  [n]
+  (let [num (.nextInt @defines/*seeded-rng* n)]
+    (zero? num)))
