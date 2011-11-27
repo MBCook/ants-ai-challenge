@@ -14,6 +14,7 @@
 ; Permanent stuff
 (def ^{:dynamic true} *ant-last-moves* (atom {}))
 (def ^{:dynamic true} *seeded-rng* (atom nil))
+(def ^{:dynamic true} *current-defense* (atom nil))
 
 (def logging-enabled false)
 (def visualizer-enabled false)

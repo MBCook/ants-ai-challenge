@@ -151,3 +151,41 @@
   [n]
   (let [num (.nextInt @defines/*seeded-rng* n)]
     (zero? num)))
+
+(defn determine-defense-strategy
+  "Figures out which defense strategy we should be using"
+  []
+  (when (gamestate/my-hills)  ; We'll only bother if we have hills to defend
+    (let [num-ants (count (gamestate/my-ants))
+          num-hills (count (gamestate/my-hills))
+          ratio (/ num-ants num-hills)]
+      (condp > ratio
+        50 :sixteen-point-defense
+        30 :twelve-point-defense
+        15 :four-point-defense
+        nil))))
+
+(defn water-test
+  "See if there is water in the given location"
+  [locaiton]
+  (contains? (gamestate/water) locaiton))
+
+(defn calculate-defense-strategies
+  "Calculates all the points for all the defense strategies"
+  ([[r c] points]
+    (filter
+      #(is-line-of-site-clear? % [r c] water-test)
+      (map #(let [[dr dc] %]                  ; Add up all the differences to get the real points
+                  [(+ r dr) (+ c dc)]) points)))
+  ([hill]                                     ; Makes a map of strategy -> points
+    {:sixteen-point-defense (calculate-defense-strategies hill defines/sixteen-point-defense)
+     :twelve-point-defense (calculate-defense-strategies hill defines/twelve-point-defense)
+     :four-point-defense (calculate-defense-strategies hill defines/four-point-defense)})
+  ([]                                         ; Makes a map of hill -> strategy map
+    (loop [hills-to-go (gamestate/my-hills)
+           map-so-far {}]
+      (if (empty? hills-to-go)
+        map-so-far
+        (let [hill (first hills-to-go)
+              others (rest hills-to-go)]
+          (recur others (assoc map-so-far hill (calculate-defense-strategies hill))))))))

@@ -49,8 +49,7 @@
   (when (not-empty (gamestate/food))
     (let [food-distances (map #(vector % (utilities/distance-no-sqrt ant %)) (gamestate/food))
           food (sort-by #(second %) (filter #(<= (second %) (gameinfo/view-radius-squared)) food-distances))
-          water-test-fn #(contains? (gamestate/water) %)
-          visible-food (filter #(utilities/is-line-of-site-clear? ant (first %) water-test-fn) food)
+          visible-food (filter #(utilities/is-line-of-site-clear? ant (first %) utilities/water-test) food)
           best-spot (first (first visible-food))]
       (when best-spot
 ;        (interface/visualizer-color :food)
@@ -86,13 +85,12 @@
     ; Find our closest hill (line of site)
     (let [hill-distances (map #(vector % (utilities/distance-no-sqrt ant %)) (gamestate/my-hills))
           hills (sort-by #(second %) hill-distances)
-          water-test-fn #(contains? (gamestate/water) %)
-          visible-hills (filter #(utilities/is-line-of-site-clear? ant (first %) water-test-fn) hills)
+          visible-hills (filter #(utilities/is-line-of-site-clear? ant (first %) utilities/water-test) hills)
           closest-hill (first (first visible-hills))]
       (when closest-hill    ; Check to see if any enemies are close
         (let [enemy-distances (map #(vector % (utilities/distance-no-sqrt closest-hill %)) (gamestate/enemy-ants))
               bad-ants (sort-by #(second %) (filter #(<= (second %) (* 2.25 (gameinfo/view-radius-squared))) enemy-distances))
-              with-line-of-attack (filter #(utilities/is-line-of-site-clear? closest-hill (first %) water-test-fn) bad-ants)]
+              with-line-of-attack (filter #(utilities/is-line-of-site-clear? closest-hill (first %) utilities/water-test) bad-ants)]
           (when (not-empty with-line-of-attack)   ; Head back
             (interface/visualizer-color :defend)
             (interface/visualize-arrow ant closest-hill)
@@ -104,8 +102,7 @@
   (when (not-empty (gamestate/enemy-hills))
     (let [hill-distances (map #(vector % (utilities/distance-no-sqrt ant %)) (gamestate/enemy-hills))
           hills (sort-by #(second %) (filter #(<= (second %) (gameinfo/view-radius-squared)) hill-distances))
-          water-test-fn #(contains? (gamestate/water) %)
-          visible-hills (filter #(utilities/is-line-of-site-clear? ant (first %) water-test-fn) hills)
+          visible-hills (filter #(utilities/is-line-of-site-clear? ant (first %) utilities/water-test) hills)
           best-spot (first (first visible-hills))]
       (when best-spot
         (interface/visualizer-color :hill)
