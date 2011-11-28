@@ -64,6 +64,8 @@
         (println "v" "setLineColor" 255 181 77 1)
       :defend
         (println "v" "setLineColor" 57 224 27 1)
+      :reinforce
+        (println "v" "setLineColor" 255 200 0 1)
       :block
         (println "v" "setLineColor" 0 0 0 1))))
 

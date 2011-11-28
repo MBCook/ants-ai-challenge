@@ -74,7 +74,7 @@
 ;          (interface/visualize-arrow worst-ant ant)
           (set/difference defines/directions (utilities/direction ant worst-ant)))))))
 
-(defn move-to-defend-our-hills
+(defn move-to-emergency-defense
   "Reinforce our hill if any enemy is near"
   [ant _ _]
   ; This rule doesn't apply if we don't know of any enemies, have no hills, or are on a hill
@@ -96,6 +96,29 @@
             (interface/visualize-arrow ant closest-hill)
             (utilities/direction ant closest-hill)))))))
 
+(defn move-to-defend-our-hills
+  "Reinforce our hill if any enemy is near"
+  [ant _ _]
+  (cond
+    ; This rule doesn't apply if we don't have any hills, or don't have a defense strategy
+    (or (nil? @defines/*current-defense*)
+        (empty? (gamestate/my-hills)))
+      nil
+    ; If we are in one of the defense positions, we're set and shouldn't move
+    ; Return the special :none direction to abort further move checks
+    (contains? @defines/*positions-to-fill* ant)
+      :none
+    ; Find the closest defense position that needs filling
+    :else
+      (let [spot-distances (map #(vector % (utilities/distance-no-sqrt ant %)) @defines/*positions-unfilled*)
+            spots (sort-by #(second %) (filter #(<= (second %) 9) spot-distances))                  ; Within 4 squares
+            visible-spots (filter #(utilities/is-line-of-site-clear? ant (first %) utilities/water-test) spots)
+            closest-spot (first (first visible-spots))]
+        (when closest-spot    ; Check to see if any spots close
+          (interface/visualizer-color :reinforce)
+          (interface/visualize-arrow ant closest-spot)
+          (utilities/direction ant closest-spot)))))
+
 (defn move-to-capture-hill
   "Move towards an enemy hill the ant can see"
   [ant _ _]
@@ -113,7 +136,8 @@
   "Run each function in turn for the ant, return the first non-nil direction we find that's valid"
   [ant valid-directions valid-directions-with-back ants-last-move]
   (when (not-empty valid-directions))
-    (loop [functions-to-run {move-to-defend-our-hills :defense    ; Don't let them take our hills!
+    (loop [functions-to-run {move-to-defend-our-hills :defense    ; Setup standing defenses around our hills
+                            move-to-emergency-defense :e-defense  ; Don't let them take our hills!
                             move-to-capture-hill :capture         ; First capture any hills we can see
                             move-away-from-enemy :run-away        ; Get away from nearby enemy ants
                             move-towards-food-classic :food       ; Then go for the closest food
@@ -123,25 +147,27 @@
               the-function (key the-function-stuff)
               the-function-purpose (val the-function-stuff)
               result (apply the-function [ant valid-directions ants-last-move])]
-          (if (empty? result)
-            (recur (rest functions-to-run))                         ; No decision, try the next function
-            (let [moves-to-choose-from (set/intersection result (if (= the-function-purpose :defense)
-                                                                    valid-directions-with-back
-                                                                    valid-directions))  ; In defense, we can reverse
-                  dir (when (not-empty moves-to-choose-from)
-                        (utilities/seeded-rand-nth (vec moves-to-choose-from)))]
-              (if dir                                               ; Was one of the moves valid?
-                (do
-                  (utilities/debug-log "Ant at " ant " doing " the-function-purpose ", going " dir)
-;                  (interface/visualize-info ant (str "Reason: " the-function-purpose))
-;                  (interface/visualize-info ant (str "Valid moves: " valid-directions))
-;                  (interface/visualize-info ant (str "Valid moves back: " valid-directions-with-back))
-;                  (interface/visualize-info ant (str "Result: " result))
-;                  (interface/visualize-info ant (str "Moves to choose from: " moves-to-choose-from))
-;                  (interface/visualize-info ant (str "Direction: " dir))
-;                  (interface/visualize-info ant (str "Last move: " ants-last-move))
-                  dir)
-                (recur (rest functions-to-run)))))))))
+          (if (= :none result)
+            nil                                                     ; Shortcut to get out without moving if neccessary
+            (if (empty? result)
+              (recur (rest functions-to-run))                       ; No decision, try the next function
+              (let [moves-to-choose-from (set/intersection result (if (= the-function-purpose :e-defense)
+                                                                      valid-directions-with-back
+                                                                      valid-directions))  ; In e-defense, we can reverse
+                    dir (when (not-empty moves-to-choose-from)
+                          (utilities/seeded-rand-nth (vec moves-to-choose-from)))]
+                (if dir                                               ; Was one of the moves valid?
+                  (do
+                    (utilities/debug-log "Ant at " ant " doing " the-function-purpose ", going " dir)
+                    (interface/visualize-info ant (str "Reason: " the-function-purpose))
+;                    (interface/visualize-info ant (str "Valid moves: " valid-directions))
+;                    (interface/visualize-info ant (str "Valid moves back: " valid-directions-with-back))
+;                    (interface/visualize-info ant (str "Result: " result))
+;                    (interface/visualize-info ant (str "Moves to choose from: " moves-to-choose-from))
+;                    (interface/visualize-info ant (str "Direction: " dir))
+;                    (interface/visualize-info ant (str "Last move: " ants-last-move))
+                    dir)
+                  (recur (rest functions-to-run))))))))))
 
 (defn process-ant
   "Take the given ant and figure out a move for them, returned as [ant dir result]"
@@ -167,19 +193,35 @@
 ;  (reset! defines/*food-map* (diffusion/diffuse-across-map (gamestate/food)
 ;                                                            (gamestate/water)
 ;                                                            9))
-  (reset! defines/*food-reservations* (loop [reservations {}
-                                             food-to-go (gamestate/food)]
-                                        (if (empty? food-to-go)
-                                          reservations
-                                          (recur (assoc reservations (first food-to-go) 0) (rest food-to-go))))))
+  (reset! defines/*current-defense* (utilities/determine-defense-strategy))       ; Pick our current strategy
+  (reset! defines/*positions-to-fill* (if (nil? @defines/*current-defense*)
+                                        #{}
+                                        (loop [spots #{}                            ; Figure out all the cells we need
+                                             hills-to-go (gamestate/my-hills)]    ;   for that strategy to work
+                                        (if (empty? hills-to-go)
+                                          spots
+                                          (let [hill (first hills-to-go)
+                                                others (rest hills-to-go)
+                                                map-for-hill (@defines/*defense-positions* hill)]
+                                            (recur (apply conj spots (map-for-hill @defines/*current-defense*))
+                                                    others))))))
+  ; Figure out the cells left to fill after taking into account the ants that may already be on some of them
+  (reset! defines/*positions-unfilled* (apply disj @defines/*positions-to-fill* (gamestate/my-ants)))
+  )
+;  (reset! defines/*food-reservations* (loop [reservations {}
+;                                             food-to-go (gamestate/food)]
+;                                        (if (empty? food-to-go)
+;                                          reservations
+;                                          (recur (assoc reservations (first food-to-go) 0) (rest food-to-go))))))
 
 (defn process-ants-for-moves
   "Process each ant in turn, gathering up their moves in the form [loc dir result]"
   []
   (utilities/debug-log "")
   (utilities/debug-log "New turn")
-(utilities/debug-log (gamestate/enemy-ants ))
-;  (reset-per-turn-atoms)
+  (reset-per-turn-atoms)
+  (utilities/debug-log "Strategy: " @defines/*current-defense*)
+  (utilities/debug-log "Unfilled: " @defines/*positions-unfilled*)
   (loop [ants (gamestate/my-ants)         ; Ants we're processing
          moves []]                        ; Moves we'll be making (a list and not a set because order matters)
     (if (empty? ants)                     ; Out of ants? We're done
@@ -195,6 +237,7 @@
 (defn simple-bot []
   "Core loop for the bot"
   (interface/setup-visualizer)
+  (reset! defines/*defense-positions* (utilities/calculate-defense-strategies))
   (reset! defines/*seeded-rng* (new java.util.Random (gameinfo/rand-seed)))
   (doseq [[ant dir res] (process-ants-for-moves)]
     (when dir

@@ -8,13 +8,16 @@
 (declare ^{:dynamic true} *log-file*)
 
 ; Per turns stuff
-(def ^{:dynamic true} *food-diffusion-map* (atom {}))
-(def ^{:dynamic true} *food-reservations* (atom {}))    ; loc -> set of ants
+;(def ^{:dynamic true} *food-diffusion-map* (atom {}))
+;(def ^{:dynamic true} *food-reservations* (atom {}))    ; loc -> set of ants
+(def ^{:dynamic true} *current-defense* (atom nil))       ; Defense shape in use
+(def ^{:dynamic true} *positions-to-fill* (atom #{}))     ; Defense spots we need to fill, set of locations
+(def ^{:dynamic true} *positions-unfilled* (atom {}))     ; Defense spots that we still haven't filled, set of locations
 
 ; Permanent stuff
 (def ^{:dynamic true} *ant-last-moves* (atom {}))
 (def ^{:dynamic true} *seeded-rng* (atom nil))
-(def ^{:dynamic true} *current-defense* (atom nil))
+(def ^{:dynamic true} *defense-positions* (atom {}))    ; loc -> ant
 
 (def logging-enabled false)
 (def visualizer-enabled false)

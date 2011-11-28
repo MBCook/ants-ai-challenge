@@ -159,7 +159,8 @@
     (let [num-ants (count (gamestate/my-ants))
           num-hills (count (gamestate/my-hills))
           ratio (/ num-ants num-hills)]
-      (condp > ratio
+      (debug-log "Ratio: " ratio)
+      (condp < ratio
         50 :sixteen-point-defense
         30 :twelve-point-defense
         15 :four-point-defense
