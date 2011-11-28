@@ -89,7 +89,7 @@
           closest-hill (first (first visible-hills))]
       (when closest-hill    ; Check to see if any enemies are close
         (let [enemy-distances (map #(vector % (utilities/distance-no-sqrt closest-hill %)) (gamestate/enemy-ants))
-              bad-ants (sort-by #(second %) (filter #(<= (second %) (* 2.25 (gameinfo/view-radius-squared))) enemy-distances))
+              bad-ants (sort-by #(second %) (filter #(<= (second %) (gameinfo/view-radius-squared)) enemy-distances))
               with-line-of-attack (filter #(utilities/is-line-of-site-clear? closest-hill (first %) utilities/water-test) bad-ants)]
           (when (not-empty with-line-of-attack)   ; Head back
             (interface/visualizer-color :defend)
