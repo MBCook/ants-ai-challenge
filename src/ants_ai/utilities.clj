@@ -155,7 +155,7 @@
 (defn determine-defense-strategy
   "Figures out which defense strategy we should be using"
   []
-  (when (gamestate/my-hills)  ; We'll only bother if we have hills to defend
+  (when (not-empty (gamestate/my-hills))  ; We'll only bother if we have hills to defend
     (let [num-ants (count (gamestate/my-ants))
           num-hills (count (gamestate/my-hills))
           ratio (/ num-ants num-hills)]
