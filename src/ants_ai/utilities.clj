@@ -118,10 +118,12 @@
     (let [[r c] location
           location-two [r2 c2]
           [delt-r delt-c] (unit-distance location location-two) ; Figure out the direction to move in (+/- for row/col)
-          manhattan-distance (+ (safe-abs delt-r) (safe-abs delt-c))
-          r-step (/ delt-r manhattan-distance)
-          c-step (/ delt-c manhattan-distance)]
-      (get-line-of-sight-block r c location-two test-fn r-step c-step)))
+          manhattan-distance (+ (safe-abs delt-r) (safe-abs delt-c))]
+      (if (zero? manhattan-distance)
+        nil                                                   ; They're the same spot, can't be a block
+        (let [r-step (/ delt-r manhattan-distance)
+              c-step (/ delt-c manhattan-distance)]
+          (get-line-of-sight-block r c location-two test-fn r-step c-step)))))
   ([row col location-two test-fn r-step c-step]
     (let [r (clamp row (gameinfo/map-rows))                   ; Fix the co-ords
           c (clamp col (gameinfo/map-columns))]
