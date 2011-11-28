@@ -33,6 +33,12 @@
     (get-line-of-sight-block [114 148] [91 60 1] (fn [_] false))
     (is true)))
 
+(deftest test-get-line-of-sight-self
+  "Tests the line of sight function"
+  (binding [defines/*game-info* {:rows 150 :cols 150}]
+    (get-line-of-sight-block [114 148] [114 148] (fn [_] false))
+    (is true)))
+
 ;(deftest timing-get-line-of-sight-block
 ;  "Tests the line of sight function"
 ;  (binding [defines/*game-info* {:rows 150 :cols 150}]
