@@ -247,9 +247,9 @@
     (loop [ants (gamestate/my-ants)   ; Ants we're processing
            moves []]                  ; Moves we'll be making (a list because order matters)
       (cond
-        (> (- (System/currentTimeMillis) start-time) (* 0.95 (gameinfo/turn-time)))
+        (> (- (System/currentTimeMillis) start-time) (* 0.90 (gameinfo/turn-time)))
           (do   ; CRUD! Out of time. Don't push it
-            (utilities/debug-log "Skipping " (count ants) " becuase we're out of time")
+            (utilities/debug-log "Skipping the rest of the ants becuase we're out of time")
             moves)
         (empty? ants)                     ; Out of ants? We're done
           (do
