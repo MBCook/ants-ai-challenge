@@ -192,3 +192,9 @@
         (let [hill (first hills-to-go)
               others (rest hills-to-go)]
           (recur others (assoc map-so-far hill (calculate-defense-strategies hill))))))))
+
+(defmacro time-method [dest & body]
+  `(let [start-time# (System/nanoTime)
+          result# (do ~@body)]
+     (swap! ~dest #(+ % (- (System/nanoTime) start-time#)))
+     result#))

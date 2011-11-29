@@ -15,10 +15,12 @@
 (defn move-in-random-direction
   "Pick a random valid direction"
   [ant valid-directions last-move]
+;(utilities/time-method defines/*timing-move-in-random-direction*
   (if (and (contains? valid-directions last-move)
             (not (utilities/seeded-rand-chance 20)))  ; 5% of the time forget what we were doing
     #{last-move}                                  ; Prefer the direction the ant was already going in
     valid-directions))
+;)
 
 ;(defn move-towards-food-diffusion
 ;  "Move towards the closest piece of food the ant can see"
@@ -46,6 +48,7 @@
 (defn move-towards-food-classic
   "Move towards the closest piece of food the ant can see"
   [ant _ _]
+;(utilities/time-method defines/*timing-move-towards-food-classic*
   (when (not-empty (gamestate/food))
     (let [food-distances (map #(vector % (utilities/distance-no-sqrt ant %)) (gamestate/food))
           food (sort-by #(second %) (filter #(<= (second %) (gameinfo/view-radius-squared)) food-distances))
@@ -55,11 +58,13 @@
 ;        (interface/visualizer-color :food)
 ;        (interface/visualize-arrow ant best-spot)
         (utilities/direction ant best-spot)))))                                             ; Send the move on
+;)
 
 (defn move-away-from-enemy
   "Move away from the closest enemy"
   [ant _ _]
   ; This rule doesn't apply if we are in visible range of one of our hills, have no hills, or know of no enemies
+;(utilities/time-method defines/*timing-move-away-from-enemy*
   (if (or (empty? (gamestate/enemy-ants))
           (empty? (gamestate/my-hills))
           (some #(<= (second %) (gameinfo/view-radius-squared))
@@ -73,10 +78,12 @@
 ;          (interface/visualizer-color :ant)
 ;          (interface/visualize-arrow worst-ant ant)
           (set/difference defines/directions (utilities/direction ant worst-ant)))))))
+;)
 
 (defn move-to-emergency-defense
   "Reinforce our hill if any enemy is near"
   [ant _ _]
+;(utilities/time-method defines/*timing-move-to-emergency-defense*
   ; This rule doesn't apply if we don't know of any enemies, have no hills, or are on a hill
   (if (or (empty? (gamestate/enemy-ants))
             (empty? (gamestate/my-hills))
@@ -95,10 +102,12 @@
             (interface/visualizer-color :defend)
             (interface/visualize-arrow ant closest-hill)
             (utilities/direction ant closest-hill)))))))
+;)
 
 (defn move-to-defend-our-hills
   "Reinforce our hill if any enemy is near"
   [ant _ _]
+;(utilities/time-method defines/*timing-move-to-defend-our-hills*
   (cond
     ; This rule doesn't apply if we don't have any hills, or don't have a defense strategy
     (or (nil? @defines/*current-defense*)
@@ -111,17 +120,19 @@
     ; Find the closest defense position that needs filling
     :else
       (let [spot-distances (map #(vector % (utilities/distance-no-sqrt ant %)) @defines/*positions-unfilled*)
-            spots (sort-by #(second %) (filter #(<= (second %) 9) spot-distances))                  ; Within 4 squares
+            spots (sort-by #(second %) (filter #(<= (second %) 9) spot-distances))        ; Within 3 squares
             visible-spots (filter #(utilities/is-line-of-site-clear? ant (first %) utilities/water-test) spots)
             closest-spot (first (first visible-spots))]
         (when closest-spot    ; Check to see if any spots close
           (interface/visualizer-color :reinforce)
           (interface/visualize-arrow ant closest-spot)
           (utilities/direction ant closest-spot)))))
+;)
 
 (defn move-to-capture-hill
   "Move towards an enemy hill the ant can see"
   [ant _ _]
+;(utilities/time-method defines/*timing-move-to-capture-hill*
   (when (not-empty (gamestate/enemy-hills))
     (let [hill-distances (map #(vector % (utilities/distance-no-sqrt ant %)) (gamestate/enemy-hills))
           hills (sort-by #(second %) (filter #(<= (second %) (gameinfo/view-radius-squared)) hill-distances))
@@ -131,6 +142,7 @@
         (interface/visualizer-color :hill)
         (interface/visualize-arrow ant best-spot)
         (utilities/direction ant best-spot)))))
+;)
 
 (defn find-move-through-functions
   "Run each function in turn for the ant, return the first non-nil direction we find that's valid"
@@ -193,6 +205,14 @@
 ;  (reset! defines/*food-map* (diffusion/diffuse-across-map (gamestate/food)
 ;                                                            (gamestate/water)
 ;                                                            9))
+
+;  (reset! defines/*timing-move-to-defend-our-hills* 0)
+;  (reset! defines/*timing-move-to-emergency-defense* 0)
+;  (reset! defines/*timing-move-away-from-enemy* 0)
+;  (reset! defines/*timing-move-towards-food-classic* 0)
+;  (reset! defines/*timing-move-in-random-direction* 0)
+;  (reset! defines/*timing-move-to-capture-hill* 0)
+;  (reset! defines/*timing-finding-moves* 0)
   (reset! defines/*current-defense* (utilities/determine-defense-strategy))       ; Pick our current strategy
   (reset! defines/*positions-to-fill* (if (nil? @defines/*current-defense*)
                                         #{}
@@ -222,17 +242,41 @@
   (reset-per-turn-atoms)
   (utilities/debug-log "Strategy: " @defines/*current-defense*)
   (utilities/debug-log "Unfilled: " @defines/*positions-unfilled*)
-  (loop [ants (gamestate/my-ants)         ; Ants we're processing
-         moves []]                        ; Moves we'll be making (a list and not a set because order matters)
-    (if (empty? ants)                     ; Out of ants? We're done
-      moves
-      (let [ant (first ants)                                              ; Ant we're working with
-            occupied-locations (into (rest ants) (map #(last %) moves))   ; Locations to consider to be occupied
-            ants-move (process-ant ant occupied-locations)                ; Figure out a move
-            result (last ants-move)]
-        (utilities/debug-log ant " moving " (second ants-move) " to " result)
-        (recur (rest ants)                    ; Ants left to process
-                (conj moves ants-move))))))   ; Moves updated with our new move
+  (let [start-time (System/currentTimeMillis)
+        result  ; The loop body below is the definition of this
+    (loop [ants (gamestate/my-ants)   ; Ants we're processing
+           moves []]                  ; Moves we'll be making (a list because order matters)
+      (cond
+        (> (- (System/currentTimeMillis) start-time) (* 0.3 (gameinfo/turn-time)))
+          (do   ; CRUD! Out of time. Don't push it
+            (utilities/debug-log "Skipping " (count ants) " becuase we're out of time")
+            moves)
+        (empty? ants)                     ; Out of ants? We're done
+          (do
+;            (utilities/debug-log "Move to defense positions: " @defines/*timing-move-to-defend-our-hills* "ns")
+;            (utilities/debug-log "Move to emergency defense: " @defines/*timing-move-to-emergency-defense* "ns")
+;            (utilities/debug-log "Move to capture hill: " @defines/*timing-move-to-capture-hill* "ns")
+;            (utilities/debug-log "Move away from enemies: " @defines/*timing-move-away-from-enemy* "ns")
+;            (utilities/debug-log "Move towards food: " @defines/*timing-move-towards-food-classic* "ns")
+;            (utilities/debug-log "Move in random directions: " @defines/*timing-move-in-random-direction* "ns")
+;            (utilities/debug-log "Finding all moves: " @defines/*timing-finding-moves* "ns")
+;            (utilities/debug-log "Move overhead: " (- @defines/*timing-finding-moves* @defines/*timing-move-to-emergency-defense* @defines/*timing-move-to-capture-hill* @defines/*timing-move-away-from-enemy* @defines/*timing-move-towards-food-classic* @defines/*timing-move-in-random-direction*) "ns")
+            moves)
+         :else
+          (let [ant (first ants)                                              ; Ant we're working with
+                occupied-locations (into (rest ants) (map #(last %) moves))   ; "Occupied" locations
+                ants-move (utilities/time-method defines/*timing-finding-moves*
+                                                 (process-ant ant occupied-locations))  ; Figure out a move
+                result (last ants-move)]
+            (utilities/debug-log ant " moving " (second ants-move) " to " result)
+            (recur (rest ants)                    ; Ants left to process
+                    (conj moves ants-move)))))   ; Moves updated with our new move
+        ; Continuing with the bindings in the let here
+          end-time (System/currentTimeMillis)
+          d (- end-time start-time)]
+    (utilities/debug-log "Full turn: " d "ms")
+;    (utilities/debug-log "Full overhead: " (- d (/ @defines/*timing-finding-moves* 1000000)) "ms")
+    result))
 
 (defn simple-bot []
   "Core loop for the bot"

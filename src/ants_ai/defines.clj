@@ -19,6 +19,15 @@
 (def ^{:dynamic true} *seeded-rng* (atom nil))
 (def ^{:dynamic true} *defense-positions* (atom {}))    ; loc -> ant
 
+; Timing stuff
+(def ^{:dynamic true} *timing-move-to-defend-our-hills* (atom 0))
+(def ^{:dynamic true} *timing-move-to-emergency-defense* (atom 0))
+(def ^{:dynamic true} *timing-move-away-from-enemy* (atom 0))
+(def ^{:dynamic true} *timing-move-towards-food-classic* (atom 0))
+(def ^{:dynamic true} *timing-move-to-capture-hill* (atom 0))
+(def ^{:dynamic true} *timing-move-in-random-direction* (atom 0))
+(def ^{:dynamic true} *timing-finding-moves* (atom 0))
+
 (def logging-enabled false)
 (def visualizer-enabled false)
 

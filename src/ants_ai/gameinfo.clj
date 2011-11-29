@@ -26,3 +26,8 @@
   "Get the suggested RNG seed"
   []
   (:player_seed defines/*game-info*))
+
+(defn turn-time
+  "Get the number of milliseconds we're allowed to run per turn"
+  []
+  (:turntime defines/*game-info*))
