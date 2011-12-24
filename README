@@ -1,13 +1,4 @@
-# ants-ai
+My entry to the 2011 Fall Google AI Challenge. This contains a copy of the tools, which I had under revision controll because I modified them during testing. You probably only care about the src directoy.
 
-FIXME: write description
+More information at: http://www.foobarsoft.com/2011/12/second-best-clojure-bot-postmortem
 
-## Usage
-
-FIXME: write
-
-## License
-
-Copyright (C) 2011 FIXME
-
-Distributed under the Eclipse Public License, the same as Clojure.
