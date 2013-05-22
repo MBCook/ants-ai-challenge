@@ -1,0 +1,13 @@
+pom.xml
+*jar
+/lib/
+/classes/
+/tools/
+.lein-failures
+.lein-deps-sum
+.DS_Store
+Ants AI Challenge.iml
+Ants AI Challenge.ipr
+Ants AI Challenge.iws
+deploy.zip
+/worker/
